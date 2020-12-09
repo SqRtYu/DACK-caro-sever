@@ -395,7 +395,7 @@ const updateUserPassword = async (req, res, next) => {
 
 const logout = async (req, res, next) => {
 	const { userId } = req.body;
-	console.log(userId);
+
 	let existingUser;
 
 	try {
@@ -430,8 +430,8 @@ const getOnline = async (req, res, next) => {
 		const error = new HttpError("Get Online Fail", 500);
 		return next(error);
 	}
-	console.log({ onlineUser });
-	res.json(onlineUser);
+
+	res.json({ users: onlineUser.map((user) => user.toObject({ getters: true })) });
 };
 
 exports.getUserById = getUserById;

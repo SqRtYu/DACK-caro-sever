@@ -16,6 +16,7 @@ const io = require("socket.io")(server, {
 		origin: "*",
 	},
 });
+
 io.on("connection", (client) => {
 	client.on("user-online", (user) => {
 		io.emit("user-online", user);
