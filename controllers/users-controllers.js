@@ -144,7 +144,7 @@ const login = async (req, res, next) => {
 		return next(error);
 	}
 
-	if (existingUser.socketId) {
+	if (existingUser && existingUser.socketId) {
 		const error = new HttpError("User has already logged in", 500);
 		return next(error);
 	}
@@ -201,7 +201,7 @@ const loginSocial = async (req, res, next) => {
 		return next(error);
 	}
 
-	if (existingUser.socketId) {
+	if (existingUser && existingUser.socketId) {
 		const error = new HttpError("User has already logged in", 500);
 		return next(error);
 	}
