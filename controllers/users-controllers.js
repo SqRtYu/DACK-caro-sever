@@ -77,7 +77,6 @@ const signup = async (req, res, next) => {
 		email,
 		password: hashedPassword,
 		image: "https://simpleicon.com/wp-content/uploads/account.png",
-		isOnline: true,
 	});
 
 	try {
@@ -124,12 +123,8 @@ const login = async (req, res, next) => {
 		const error = new HttpError("Logging fail please try again.", 500);
 		return next(error);
 	}
-	console.log(existingUser);
 	if (!existingUser) {
-		const error = new HttpError(
-			"Invalid credentials, could not log you in.",
-			403
-		);
+		const error = new HttpError("User not found", 404);
 		return next(error);
 	}
 
@@ -149,6 +144,11 @@ const login = async (req, res, next) => {
 		return next(error);
 	}
 
+	if (existingUser.socketId) {
+		const error = new HttpError("User has already logged in", 500);
+		return next(error);
+	}
+
 	let token;
 	try {
 		token = jwt.sign(
@@ -163,14 +163,6 @@ const login = async (req, res, next) => {
 		);
 	} catch (err) {
 		const error = new HttpError("Logging fail please try again.", 500);
-		return next(error);
-	}
-
-	try {
-		existingUser.isOnline = true;
-		await existingUser.save();
-	} catch (err) {
-		const error = new HttpError("Update online fail.", 500);
 		return next(error);
 	}
 
@@ -206,6 +198,11 @@ const loginSocial = async (req, res, next) => {
 		existingUser = await User.findOne({ userName });
 	} catch (err) {
 		const error = new HttpError("Logging fail please try again.", 500);
+		return next(error);
+	}
+
+	if (existingUser.socketId) {
+		const error = new HttpError("User has already logged in", 500);
 		return next(error);
 	}
 
@@ -250,14 +247,6 @@ const loginSocial = async (req, res, next) => {
 		);
 	} catch (err) {
 		const error = new HttpError("Logging fail please try again.", 500);
-		return next(error);
-	}
-
-	try {
-		(existingUser || createdUser).isOnline = true;
-		await (existingUser || createdUser).save();
-	} catch (err) {
-		const error = new HttpError("Update online fail.", 500);
 		return next(error);
 	}
 
@@ -412,26 +401,23 @@ const logout = async (req, res, next) => {
 		);
 		return next(error);
 	}
-	try {
-		existingUser.isOnline = false;
-		await existingUser.save();
-	} catch (err) {
-		const error = new HttpError("Update offline fail.", 500);
-		return next(error);
-	}
 
 	res.status(200).send();
 };
 
 const getOnline = async (req, res, next) => {
+	const { socketId } = req.body;
 	try {
-		onlineUser = await User.find({ isOnline: true });
+		onlineUser = await User.find({ socketId: { $nin: [socketId, null] } });
+		console.log(onlineUser);
 	} catch (err) {
 		const error = new HttpError("Get Online Fail", 500);
 		return next(error);
 	}
 
-	res.json({ users: onlineUser.map((user) => user.toObject({ getters: true })) });
+	res.json({
+		users: onlineUser.map((user) => user.toObject({ getters: true })),
+	});
 };
 
 exports.getUserById = getUserById;

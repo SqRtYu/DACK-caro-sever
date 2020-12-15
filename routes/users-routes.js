@@ -13,7 +13,6 @@ router.post(
 	"/signup",
 	fileUpload.single("image"),
 	(req, res, next) => {
-		console.log(req.body);
 		next();
 	},
 	[

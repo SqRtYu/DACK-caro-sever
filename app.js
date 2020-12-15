@@ -16,12 +16,28 @@ const io = require("socket.io")(server, {
 		origin: "*",
 	},
 });
+const User = require("./models/user");
 
 io.on("connection", (client) => {
 	client.on("user-online", (user) => {
-		io.emit("user-online", user);
+		User.findById(user.userId).then((matchedUser) => {
+			matchedUser.socketId = client.id;
+			matchedUser.save().then((doc) => {
+				console.log("Client online", doc);
+				client.broadcast.emit("user-online", user);
+				User.find({ socketId: { $nin: [client.id, null] } }).then((list) => {
+					io.to(client.id).emit("get-online", list);
+				});
+			});
+		});
 	});
-	client.on("user-offline", (userId) => io.emit("user-offline", userId));
+	client.on("disconnect", () => {
+		io.emit("user-offline", client.id);
+		User.findOne({ socketId: client.id }).then((matchedUser) => {
+			matchedUser.socketId = null;
+			matchedUser.save().then((doc) => console.log("Client offline: ", doc));
+		});
+	});
 });
 
 app.use(bodyParser.json());
