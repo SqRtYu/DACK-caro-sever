@@ -1,12 +1,12 @@
 const fs = require("fs");
 const path = require("path");
-
 const express = require("express");
 const bodyParser = require("body-parser");
 const mongoose = require("mongoose");
 const cors = require("cors");
 
 const usersRoutes = require("./routes/users-routes");
+var socketfunc = require('./socket.io/socket.io');
 
 const app = express();
 
@@ -16,29 +16,8 @@ const io = require("socket.io")(server, {
 		origin: "*",
 	},
 });
-const User = require("./models/user");
 
-io.on("connection", (client) => {
-	client.on("user-online", (user) => {
-		User.findById(user.userId).then((matchedUser) => {
-			matchedUser.socketId = client.id;
-			matchedUser.save().then((doc) => {
-				console.log("Client online", doc);
-				client.broadcast.emit("user-online", user);
-				User.find({ socketId: { $nin: [client.id, null] } }).then((list) => {
-					io.to(client.id).emit("get-online", list);
-				});
-			});
-		});
-	});
-	client.on("disconnect", () => {
-		io.emit("user-offline", client.id);
-		User.findOne({ socketId: client.id }).then((matchedUser) => {
-			matchedUser.socketId = null;
-			matchedUser.save().then((doc) => console.log("Client offline: ", doc));
-		});
-	});
-});
+io.on('connection', socket => socketfunc(io, socket));
 
 app.use(bodyParser.json());
 
