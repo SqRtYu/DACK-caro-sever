@@ -8,6 +8,6 @@ const router = express.Router();
 
 router.use(checkAuth);
 
-router.get("/", gamesControllers.saveGame);
+router.post("/", gamesControllers.saveGame);
 
 module.exports = router;

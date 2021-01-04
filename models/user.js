@@ -10,6 +10,12 @@ const userSchema = new Schema({
 	password: { type: String, required: true, minLength: 6 },
 	image: { type: String },
 	socketId: { type: String },
+	point: {type: Number, default: 0},
+	numberOfWins: {type: Number, default: 0 },
+	numberOfDefeats: {type: Number, default: 0},
+	numberOfDraws: { type: Number, default: 0},
+	totalGames: {type: Number, default: 0},
+	// games: [{ type: mongoose.Types.ObjectId, required: true, ref: "Game" }],
 });
 
 userSchema.plugin(uniqueValidator);

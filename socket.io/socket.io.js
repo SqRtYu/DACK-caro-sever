@@ -117,49 +117,49 @@ module.exports = (io, socket) => {
     }
   });
 
-  socket.on("on-reconnect", function (data) {
-    if (data.roomInfo) {
-      socket.data = data.user;
+  // socket.on("on-reconnect", function (data) {
+  //   if (data.roomInfo) {
+  //     socket.data = data.user;
 
-      for (var i = 0; i < listRooms.length; i++) {
-        if (listRooms[i].id === data.roomInfo.id) {
-          if (listRooms[i].playerO === "DISCONNECTED") {
-            listRooms[i].playerO = data.user.name;
-            listRooms[i].imageO = data.user.image;
-          }
-          if (listRooms[i].playerX === "DISCONNECTED") {
-            listRooms[i].playerX = data.user.name;
-            listRooms[i].imageX = data.user.image;
-          }
+  //     for (var i = 0; i < listRooms.length; i++) {
+  //       if (listRooms[i].id === data.roomInfo.id) {
+  //         if (listRooms[i].playerO === "DISCONNECTED") {
+  //           listRooms[i].playerO = data.user.name;
+  //           listRooms[i].imageO = data.user.image;
+  //         }
+  //         if (listRooms[i].playerX === "DISCONNECTED") {
+  //           listRooms[i].playerX = data.user.name;
+  //           listRooms[i].imageX = data.user.image;
+  //         }
 
-          socket.room = listRooms[i].id;
-          socket.join(socket.room);
+  //         socket.room = listRooms[i].id;
+  //         socket.join(socket.room);
 
-          socket.to(socket.room).emit("on-reconnect", listRooms[i]);
-          console.log(
-            "Player [" +
-              data.user.userName +
-              "] reconnected in room [" +
-              socket.room +
-              "]"
-          );
+  //         socket.to(socket.room).emit("on-reconnect", listRooms[i]);
+  //         console.log(
+  //           "Player [" +
+  //             data.user.userName +
+  //             "] reconnected in room [" +
+  //             socket.room +
+  //             "]"
+  //         );
 
-          if (listRooms[i].lastMove) {
-            socket.emit("move", listRooms[i].lastMove);
-          }
+  //         if (listRooms[i].lastMove) {
+  //           socket.emit("move", listRooms[i].lastMove);
+  //         }
 
-          return;
-        }
-      }
+  //         return;
+  //       }
+  //     }
 
-      socket.emit("on-reconnect", null);
-      console.log(
-        "Player [" +
-          data.user.userName +
-          "] find room [" +
-          data.roomInfo.id +
-          "] but not exists"
-      );
-    }
-  });
+  //     socket.emit("on-reconnect", null);
+  //     console.log(
+  //       "Player [" +
+  //         data.user.userName +
+  //         "] find room [" +
+  //         data.roomInfo.id +
+  //         "] but not exists"
+  //     );
+  //   }
+  // });
 };
