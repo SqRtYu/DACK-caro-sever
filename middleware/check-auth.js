@@ -22,7 +22,6 @@ const verifyAPI = jwt({
 });
 
 const verifySocket = (socket, next) => {
-	console.log("verify");
 	if (socket.handshake.query && socket.handshake.query.token) {
 		const token = socket.handshake.query.token;
 		jwksRsa({

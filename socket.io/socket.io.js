@@ -27,7 +27,7 @@ module.exports = (io, socket) => {
 
 	socket.on("join-room-request", (room, password) => {
 		// chỗ này check password các thứ
-		socket.emit("join-room-success", room.id);
+		socket.emit("join-room-success", { roomId: room.id });
 	});
 
 	socket.on("disconnect", () => {
@@ -69,8 +69,8 @@ module.exports = (io, socket) => {
 				break;
 			}
 		}
-  });
-  
+	});
+
 	socket.on("joinroom", (data) => {
 		socket.data = data;
 
