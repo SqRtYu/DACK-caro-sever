@@ -32,44 +32,45 @@ module.exports = (io, socket) => {
 
 	socket.on("disconnect", () => {
 		socket.broadcast.emit("user-offline", socket.id);
-		// socket.removeAllListeners();
-		// socket.leave(socket.room);
+		socket.removeAllListeners();
+		socket.leave(socket.room);
 
-		// for (let i = 0; i < listRooms.length; i++) {
-		// 	if (listRooms[i].id == socket.room) {
-		// 		if (listRooms[i].playerO == null) {
-		// 			listRooms.splice(i, 1);
-		// 			console.log("Room [" + socket.room + "] destroyed");
-		// 		} else {
-		// 			if (listRooms[i].playerO === socket.data.name) {
-		// 				listRooms[i].playerO = "DISCONNECTED";
-		// 			}
-		// 			if (listRooms[i].playerX === socket.data.name) {
-		// 				listRooms[i].playerX = "DISCONNECTED";
-		// 			}
+		for (let i = 0; i < listRooms.length; i++) {
+			if (listRooms[i].id == socket.room) {
+				if (listRooms[i].playerO == null) {
+					listRooms.splice(i, 1);
+					console.log("Room [" + socket.room + "] destroyed");
+				} else {
+					if (listRooms[i].playerO === socket.data.name) {
+						listRooms[i].playerO = "DISCONNECTED";
+					}
+					if (listRooms[i].playerX === socket.data.name) {
+						listRooms[i].playerX = "DISCONNECTED";
+					}
 
-		// 			if (
-		// 				listRooms[i].playerO === "DISCONNECTED" &&
-		// 				listRooms[i].playerX === "DISCONNECTED"
-		// 			) {
-		// 				listRooms.splice(i, 1);
-		// 				console.log("Room [" + socket.room + "] destroyed");
-		// 			} else {
-		// 				io.to(listRooms[i].id).emit("disconnectRoom", listRooms[i]);
-		// 				console.log(
-		// 					"Player [" +
-		// 						socket.data.userName +
-		// 						"] leave room [" +
-		// 						socket.room +
-		// 						"]"
-		// 				);
-		// 			}
-		// 		}
+					if (
+						listRooms[i].playerO === "DISCONNECTED" &&
+						listRooms[i].playerX === "DISCONNECTED"
+					) {
+						listRooms.splice(i, 1);
+						console.log("Room [" + socket.room + "] destroyed");
+					} else {
+						io.to(listRooms[i].id).emit("disconnectRoom", listRooms[i]);
+						console.log(
+							"Player [" +
+								socket.data.userName +
+								"] leave room [" +
+								socket.room +
+								"]"
+						);
+					}
+				}
 
-		// 		break;
-		// 	}
-		// }
-	});
+				break;
+			}
+		}
+  });
+  
 	socket.on("joinroom", (data) => {
 		socket.data = data;
 
