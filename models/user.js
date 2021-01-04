@@ -4,12 +4,19 @@ const uniqueValidator = require("mongoose-unique-validator");
 const Schema = mongoose.Schema;
 
 const userSchema = new Schema({
-	name: { type: String, required: true },
-	userName: { type: String, required: true, unique: true },
-	email: { type: String, required: true },
-	password: { type: String, required: true, minLength: 6 },
+	name: { type: String },
+	userName: { type: String, unique: true },
+	email: { type: String },
+	password: { type: String, minLength: 6 },
 	image: { type: String },
 	socketId: { type: String },
+	given_name: { type: String },
+	family_name: { type: String },
+	nickname: { type: String },
+	picture: { type: String },
+	updated_at: { type: String },
+	email_verified: { type: Boolean },
+	sub: { type: String },
 	point: {type: Number, default: 0},
 	numberOfWins: {type: Number, default: 0 },
 	numberOfDefeats: {type: Number, default: 0},

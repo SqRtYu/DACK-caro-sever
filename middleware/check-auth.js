@@ -1,27 +1,53 @@
-const jwt = require('jsonwebtoken');
+const jsonwebtoken = require("jsonwebtoken");
+const jwt = require("express-jwt");
+const jwksRsa = require("jwks-rsa");
+const authConfig = require("../config/auth.json");
+const { json } = require("express");
 
-const HttpError = require('../models/http-error');
+if (!authConfig.domain || !authConfig.audience) {
+	throw new Error(
+		"Please make sure that auth_config.json is in place and populated"
+	);
+}
+const verifyAPI = jwt({
+	secret: jwksRsa.expressJwtSecret({
+		cache: true,
+		rateLimit: true,
+		jwksRequestsPerMinute: 5,
+		jwksUri: `https://${authConfig.domain}/.well-known/jwks.json`,
+	}),
+	audience: authConfig.audience,
+	issuer: `https://${authConfig.domain}/`,
+	algorithms: ["RS256"],
+});
 
-module.exports = (req, res, next) => {
-    if(req.method === 'OPTIONS'){
-        return next();
-    }
+const verifySocket = (socket, next) => {
+	console.log("verify");
+	if (socket.handshake.query && socket.handshake.query.token) {
+		const token = socket.handshake.query.token;
+		jwksRsa({
+			cache: true,
+			rateLimit: true,
+			jwksRequestsPerMinute: 5,
+			jwksUri: `https://${authConfig.domain}/.well-known/jwks.json`,
+		}).getSigningKeys((err, keys) => {
+			if (err) return next(new Error("Authentication error"));
+			else {
+				try {
+					jsonwebtoken.verify(token, keys[0].getPublicKey(), {
+						audience: authConfig.audience,
+						issuer: `https://${authConfig.domain}/`,
+						algorithms: ["RS256"],
+					});
+				} catch (err) {
+					console.log(err);
+					return next(new Error("Authentication error"));
+				}
+			}
+		});
 
-    try{
-        const token = req.headers.authorization.split(' ')[1];
-        if(!token){
-            throw new Error('Authentication failed!');
-        }
-        const decodedToken = jwt.verify(token, process.env.JWT_KEY);
-        req.userData = {
-            userId: decodedToken.userId,
-            // userName: decodedToken.userName,
-            // userEmail: decodedToken.userEmail
-        };
-        next();
-    }catch(err){
-        const error = new HttpError('Authentication failed!', 403);
-        return next(error);
-    }
-
+		return next();
+	} else return next(new Error("Authentication error"));
 };
+
+module.exports = { verifyAPI, verifySocket };

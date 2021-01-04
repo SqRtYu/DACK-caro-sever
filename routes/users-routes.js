@@ -1,7 +1,6 @@
 const express = require("express");
 const { check } = require("express-validator");
 
-const checkAuth = require("../middleware/check-auth.js");
 const usersControllers = require("../controllers/users-controllers");
 const fileUpload = require("../middleware/uploadImageUsers");
 
@@ -27,8 +26,6 @@ router.post("/login", usersControllers.login);
 router.post("/login-social", usersControllers.loginSocial);
 router.post("/logout", usersControllers.logout);
 router.post("/online", usersControllers.getOnline);
-
-router.use(checkAuth);
 
 router.patch(
 	"/:uid",
