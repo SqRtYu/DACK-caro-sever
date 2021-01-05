@@ -31,8 +31,11 @@ module.exports = (io, socket) => {
 	});
 
 	socket.on("disconnect", () => {
+
+		console.log("disconnect");
+
 		socket.broadcast.emit("user-offline", socket.id);
-		socket.removeAllListeners();
+		// socket.removeAllListeners();
 		socket.leave(socket.room);
 
 		for (let i = 0; i < listRooms.length; i++) {
@@ -41,6 +44,7 @@ module.exports = (io, socket) => {
 					listRooms.splice(i, 1);
 					console.log("Room [" + socket.room + "] destroyed");
 				} else {
+					console.log(socket.data.name);
 					if (listRooms[i].playerO === socket.data.name) {
 						listRooms[i].playerO = "DISCONNECTED";
 					}
@@ -58,7 +62,7 @@ module.exports = (io, socket) => {
 						io.to(listRooms[i].id).emit("disconnectRoom", listRooms[i]);
 						console.log(
 							"Player [" +
-								socket.data.userName +
+								socket.data.name +
 								"] leave room [" +
 								socket.room +
 								"]"
@@ -71,17 +75,18 @@ module.exports = (io, socket) => {
 		}
 	});
 
-	socket.on("joinroom", (data) => {
+	socket.on("join-room-quick", (data) => {
+		console.log("join-room-quick");
 		socket.data = data;
 
 		for (let i = 0; i < listRooms.length; i++) {
 			if (listRooms[i].playerO == null) {
 				listRooms[i].playerO = data.name;
-				listRooms[i].imageO = data.image;
+				listRooms[i].pictureO = data.picture;
 				socket.room = listRooms[i].id;
 				socket.join(socket.room);
 
-				io.in(listRooms[i].id).emit("joinroom-success", listRooms[i]);
+				io.in(listRooms[i].id).emit("join-room-quick-success", listRooms[i]);
 
 				console.log("Room [" + socket.room + "] played");
 				return;
@@ -89,11 +94,11 @@ module.exports = (io, socket) => {
 		}
 
 		let room = {
-			id: data.userName + Date.now(),
+			id: Date.now(),
 			playerX: data.name,
-			imageX: data.image,
+			pictureX: data.picture,
 			playerO: null,
-			imageO: null,
+			pictureO: null,
 		};
 		listRooms.push(room);
 
@@ -104,6 +109,8 @@ module.exports = (io, socket) => {
 	});
 
 	socket.on("move", (data) => {
+		console.log("move");
+		console.log(socket.id);
 		socket.to(socket.room).emit("move", data);
 
 		for (let i = 0; i < listRooms.length; i++) {
@@ -114,6 +121,7 @@ module.exports = (io, socket) => {
 	});
 
 	socket.on("chat", (data) => {
+		console.log("chat" + data);
 		socket.emit("chat", {
 			sender: socket.data.name,
 			message: data,
@@ -132,11 +140,11 @@ module.exports = (io, socket) => {
 	// 			if (listRooms[i].id === data.roomInfo.id) {
 	// 				if (listRooms[i].playerO === "DISCONNECTED") {
 	// 					listRooms[i].playerO = data.user.name;
-	// 					listRooms[i].imageO = data.user.image;
+	// 					listRooms[i].pictureO = data.user.picture;
 	// 				}
 	// 				if (listRooms[i].playerX === "DISCONNECTED") {
 	// 					listRooms[i].playerX = data.user.name;
-	// 					listRooms[i].imageX = data.user.image;
+	// 					listRooms[i].pictureX = data.user.picture;
 	// 				}
 
 	// 				socket.room = listRooms[i].id;
@@ -145,7 +153,7 @@ module.exports = (io, socket) => {
 	// 				socket.to(socket.room).emit("on-reconnect", listRooms[i]);
 	// 				console.log(
 	// 					"Player [" +
-	// 						data.user.userName +
+	// 						data.user.name +
 	// 						"] reconnected in room [" +
 	// 						socket.room +
 	// 						"]"
@@ -162,7 +170,7 @@ module.exports = (io, socket) => {
 	// 		socket.emit("on-reconnect", null);
 	// 		console.log(
 	// 			"Player [" +
-	// 				data.user.userName +
+	// 				data.user.name +
 	// 				"] find room [" +
 	// 				data.roomInfo.id +
 	// 				"] but not exists"

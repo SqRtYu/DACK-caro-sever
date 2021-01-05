@@ -24,7 +24,6 @@ const io = require("socket.io")(server, {
 	},
 });
 io.use(verifySocket).on("connection", (socket) => {
-	console.log(socket.id);
 	socketfunc(io, socket);
 });
 
