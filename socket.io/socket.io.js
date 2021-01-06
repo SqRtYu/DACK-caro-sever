@@ -3,246 +3,275 @@ const User = require("../models/user");
 let listRooms = [];
 
 module.exports = (io, socket) => {
-	socket.on("user-online", (user) => {
-		const currentUsers = Array.from(io.sockets.sockets).map(
-			([socketId, { user }]) => ({
-				socketId,
-				...user,
-			})
-		);
-		// if (currentUsers.filter(({ sub }) => sub && sub === user.sub).length) {
-		// 	socket.emit("force-logout", "User already logged in");
-		// } else {
-		// Send Current Online User List for the new user
-		const currentOnlineUsers = currentUsers.filter(
-			({ sub }) => sub && sub !== user.sub
-		);
-		socket.emit("get-online", currentOnlineUsers);
-		// Send to old user that new user has just logged in
-		socket.broadcast.emit("user-online", { ...user, socketId: socket.id });
-		// Save User to Socket
-		socket.user = user;
-		// }
-	});
+  socket.on("user-online", (user) => {
+    const currentUsers = Array.from(io.sockets.sockets).map(
+      ([socketId, { user }]) => ({
+        socketId,
+        ...user,
+      })
+    );
+    // if (currentUsers.filter(({ sub }) => sub && sub === user.sub).length) {
+    // 	socket.emit("force-logout", "User already logged in");
+    // } else {
+    // Send Current Online User List for the new user
+    const currentOnlineUsers = currentUsers.filter(
+      ({ sub }) => sub && sub !== user.sub
+    );
+    socket.emit("get-online", currentOnlineUsers);
+    // Send to old user that new user has just logged in
+    socket.broadcast.emit("user-online", { ...user, socketId: socket.id });
+    // Save User to Socket
+    socket.user = user;
+    // }
+  });
 
-	socket.on("join-room-request", (room, password) => {
-		// chỗ này check password các thứ
-		socket.emit("join-room-success", { roomId: room.id });
-	});
+  socket.on("join-room-request", (roomId, password) => {
+    // chỗ này check password các thứ
+    socket.emit("join-room-success", { roomId: room.id });
+  });
 
-	socket.on("out-game", () => {
-		console.log("out");
-		socket.leave(socket.room);
+  socket.on("create-room-request", (roomName, password, time = 30000) => {
+    console.log(
+      "create-room-request" + room + "password: " + password + "time: " + time
+    );
+    
+    let room = {
+      id: Date.now(),
+      roomName,
+      players: {
+        X: socket.user,
+        O: null,
+      },
+      host: socket.user.name,
+      password,
+      time,
+    };
+    listRooms.push(room);
 
-		for (let i = 0; i < listRooms.length; i++) {
-			if (listRooms[i].id == socket.room) {
-				if (listRooms[i].playerO == null) {
-					listRooms.splice(i, 1);
-					console.log("Room [" + socket.room + "] destroyed");
-				} else {
-					console.log(socket.data.name);
-					if (listRooms[i].playerO === socket.data.name) {
-						listRooms[i].playerO = "DISCONNECTED";
-					}
-					if (listRooms[i].playerX === socket.data.name) {
-						listRooms[i].playerX = "DISCONNECTED";
-					}
+    socket.room = room.id;
+    socket.join(socket.room);
 
-					if (
-						listRooms[i].playerO === "DISCONNECTED" &&
-						listRooms[i].playerX === "DISCONNECTED"
-					) {
-						listRooms.splice(i, 1);
-						console.log("Room [" + socket.room + "] destroyed");
-					} else {
-						io.to(listRooms[i].id).emit("disconnectRoom", listRooms[i]);
-						console.log(
-							"Player [" +
-								socket.data.name +
-								"] leave room [" +
-								socket.room +
-								"]"
-						);
-					}
-				}
+    socket.emit("create-room-success", room);
 
-				break;
-			}
-		}
-	});
+    console.log("Room [" + socket.room + "] created");
+  });
 
-	socket.on("disconnect", () => {
-		console.log("disconnect");
+  socket.on("out-game", () => {
+    console.log("out");
 
-		socket.broadcast.emit("user-offline", socket.id);
-		// socket.removeAllListeners();
+    socket.leave(socket.room);
 
-		for (let i = 0; i < listRooms.length; i++) {
-			if (listRooms[i].id == socket.room) {
-				if (listRooms[i].playerO == null) {
-					listRooms.splice(i, 1);
-					console.log("Room [" + socket.room + "] destroyed");
-				} else {
-					console.log(socket.data.name);
-					if (listRooms[i].playerO === socket.data.name) {
-						listRooms[i].playerO = "DISCONNECTED";
-					}
-					if (listRooms[i].playerX === socket.data.name) {
-						listRooms[i].playerX = "DISCONNECTED";
-					}
+    for (let i = 0; i < listRooms.length; i++) {
+      if (listRooms[i].id == socket.room) {
+        if (listRooms[i].playerO == null) {
+          listRooms.splice(i, 1);
+          console.log("Room [" + socket.room + "] destroyed");
+        } else {
+          console.log(socket.data.name);
+          if (listRooms[i].playerO === socket.data.name) {
+            listRooms[i].playerO = "DISCONNECTED";
+          }
+          if (listRooms[i].playerX === socket.data.name) {
+            listRooms[i].playerX = "DISCONNECTED";
+          }
 
-					if (
-						listRooms[i].playerO === "DISCONNECTED" &&
-						listRooms[i].playerX === "DISCONNECTED"
-					) {
-						listRooms.splice(i, 1);
-						console.log("Room [" + socket.room + "] destroyed");
-					} else {
-						io.to(listRooms[i].id).emit("disconnectRoom", listRooms[i]);
-						console.log(
-							"Player [" +
-								socket.data.name +
-								"] leave room [" +
-								socket.room +
-								"]"
-						);
-					}
-				}
+          if (
+            listRooms[i].playerO === "DISCONNECTED" &&
+            listRooms[i].playerX === "DISCONNECTED"
+          ) {
+            listRooms.splice(i, 1);
+            console.log("Room [" + socket.room + "] destroyed");
+          } else {
+            io.to(listRooms[i].id).emit("disconnectRoom", listRooms[i]);
+            console.log(
+              "Player [" +
+                socket.data.name +
+                "] leave room [" +
+                socket.room +
+                "]"
+            );
+          }
+        }
 
-				break;
-			}
-		}
-	});
+        break;
+      }
+    }
+  });
 
-	socket.on("join-room-quick", (data) => {
-		console.log("join-room-quick");
-		socket.data = data;
+  socket.on("disconnect", () => {
+    console.log("disconnect");
 
-		for (let i = 0; i < listRooms.length; i++) {
-			if (listRooms[i].playerO == null) {
-				listRooms[i].playerO = data.name;
-				listRooms[i].pictureO = data.picture;
-				socket.room = listRooms[i].id;
-				socket.join(socket.room);
+    socket.broadcast.emit("user-offline", socket.id);
+    // socket.removeAllListeners();
 
-				io.in(listRooms[i].id).emit("join-room-quick-success", listRooms[i]);
+    socket.leave(socket.room);
 
-				console.log("Room [" + socket.room + "] played");
-				return;
-			}
-		}
+    for (let i = 0; i < listRooms.length; i++) {
+      if (listRooms[i].id == socket.room) {
+        if (listRooms[i].playerO == null) {
+          listRooms.splice(i, 1);
+          console.log("Room [" + socket.room + "] destroyed");
+        } else {
+          console.log(socket.data.name);
+          if (listRooms[i].playerO === socket.data.name) {
+            listRooms[i].playerO = "DISCONNECTED";
+          }
+          if (listRooms[i].playerX === socket.data.name) {
+            listRooms[i].playerX = "DISCONNECTED";
+          }
 
-		let room = {
-			id: Date.now(),
-			playerX: data.name,
-			pictureX: data.picture,
-			playerO: null,
-			pictureO: null,
-		};
-		listRooms.push(room);
+          if (
+            listRooms[i].playerO === "DISCONNECTED" &&
+            listRooms[i].playerX === "DISCONNECTED"
+          ) {
+            listRooms.splice(i, 1);
+            console.log("Room [" + socket.room + "] destroyed");
+          } else {
+            io.to(listRooms[i].id).emit("disconnectRoom", listRooms[i]);
+            console.log(
+              "Player [" +
+                socket.data.name +
+                "] leave room [" +
+                socket.room +
+                "]"
+            );
+          }
+        }
 
-		socket.room = room.id;
-		socket.join(socket.room);
+        break;
+      }
+    }
+  });
 
-		console.log("Room [" + socket.room + "] created");
-	});
+  socket.on("join-room-quick", (data) => {
+    console.log("join-room-quick");
+    socket.data = data;
 
-	socket.on("move", (data) => {
-		console.log("move");
-		console.log(socket.id);
-		socket.to(socket.room).emit("move", data);
+    for (let i = 0; i < listRooms.length; i++) {
+      if (listRooms[i].playerO == null) {
+        listRooms[i].playerO = data.name;
+        listRooms[i].pictureO = data.picture;
+        socket.room = listRooms[i].id;
+        socket.join(socket.room);
 
-		for (let i = 0; i < listRooms.length; i++) {
-			if (listRooms[i].id == socket.room) {
-				listRooms[i].lastMove = data;
-			}
-		}
-	});
+        io.in(listRooms[i].id).emit("join-room-quick-success", listRooms[i]);
 
-	socket.on("chat", (data) => {
-		console.log("chat" + data);
-		socket.emit("chat", {
-			sender: socket.data.name,
-			message: data,
-		});
-		socket.to(socket.room).emit("chat", {
-			sender: socket.data.name,
-			message: data,
-		});
-	});
+        console.log("Room [" + socket.room + "] played");
+        return;
+      }
+    }
 
-	//refresh-game
-	socket.on("refresh-game-request", (data) => {
-		socket.to(socket.room).emit("refresh-game-request", data);
-	});
+    let room = {
+      id: Date.now(),
+      playerX: data.name,
+      pictureX: data.picture,
+      playerO: null,
+      pictureO: null,
+    };
+    listRooms.push(room);
 
-	socket.on("refresh-game-result", (data) => {
-		socket.to(socket.room).emit("refresh-game-result", data);
-	});
+    socket.room = room.id;
+    socket.join(socket.room);
 
-	// surrender
-	socket.on("surrender-request", () => {
-		socket.to(socket.room).emit("surrender-request");
-	});
+    console.log("Room [" + socket.room + "] created");
+  });
 
-	socket.on("surrender-result", () => {
-		socket.to(socket.room).emit("surrender-result");
-	});
+  socket.on("move", (data) => {
+    console.log("move");
+    console.log(socket.id);
+    socket.to(socket.room).emit("move", data);
 
-	// draw
-	socket.on("draw-request", () => {
-		console.log("draw-request");
-		socket.to(socket.room).emit("draw-request");
-	});
+    for (let i = 0; i < listRooms.length; i++) {
+      if (listRooms[i].id == socket.room) {
+        listRooms[i].lastMove = data;
+      }
+    }
+  });
 
-	socket.on("draw-result", (data) => {
-		console.log("draw-result");
-		socket.to(socket.room).emit("draw-result", data);
-	});
+  socket.on("chat", (data) => {
+    console.log("chat" + data);
+    socket.emit("chat", {
+      sender: socket.data.name,
+      message: data,
+    });
+    socket.to(socket.room).emit("chat", {
+      sender: socket.data.name,
+      message: data,
+    });
+  });
 
-	// socket.on("on-reconnect", function (data) {
-	// 	if (data.roomInfo) {
-	// 		socket.data = data.user;
+  //refresh-game
+  socket.on("refresh-game-request", (data) => {
+    socket.to(socket.room).emit("refresh-game-request", data);
+  });
 
-	// 		for (var i = 0; i < listRooms.length; i++) {
-	// 			if (listRooms[i].id === data.roomInfo.id) {
-	// 				if (listRooms[i].playerO === "DISCONNECTED") {
-	// 					listRooms[i].playerO = data.user.name;
-	// 					listRooms[i].pictureO = data.user.picture;
-	// 				}
-	// 				if (listRooms[i].playerX === "DISCONNECTED") {
-	// 					listRooms[i].playerX = data.user.name;
-	// 					listRooms[i].pictureX = data.user.picture;
-	// 				}
+  socket.on("refresh-game-result", (data) => {
+    socket.to(socket.room).emit("refresh-game-result", data);
+  });
 
-	// 				socket.room = listRooms[i].id;
-	// 				socket.join(socket.room);
+  // surrender
+  socket.on("surrender-request", () => {
+    socket.to(socket.room).emit("surrender-request");
+  });
 
-	// 				socket.to(socket.room).emit("on-reconnect", listRooms[i]);
-	// 				console.log(
-	// 					"Player [" +
-	// 						data.user.name +
-	// 						"] reconnected in room [" +
-	// 						socket.room +
-	// 						"]"
-	// 				);
+  socket.on("surrender-result", () => {
+    socket.to(socket.room).emit("surrender-result");
+  });
 
-	// 				if (listRooms[i].lastMove) {
-	// 					socket.emit("move", listRooms[i].lastMove);
-	// 				}
+  // draw
+  socket.on("draw-request", () => {
+    console.log("draw-request");
+    socket.to(socket.room).emit("draw-request");
+  });
 
-	// 				return;
-	// 			}
-	// 		}
+  socket.on("draw-result", (data) => {
+    console.log("draw-result");
+    socket.to(socket.room).emit("draw-result", data);
+  });
 
-	// 		socket.emit("on-reconnect", null);
-	// 		console.log(
-	// 			"Player [" +
-	// 				data.user.name +
-	// 				"] find room [" +
-	// 				data.roomInfo.id +
-	// 				"] but not exists"
-	// 		);
-	// 	}
-	// });
+  // socket.on("on-reconnect", function (data) {
+  // 	if (data.roomInfo) {
+  // 		socket.data = data.user;
+
+  // 		for (var i = 0; i < listRooms.length; i++) {
+  // 			if (listRooms[i].id === data.roomInfo.id) {
+  // 				if (listRooms[i].playerO === "DISCONNECTED") {
+  // 					listRooms[i].playerO = data.user.name;
+  // 					listRooms[i].pictureO = data.user.picture;
+  // 				}
+  // 				if (listRooms[i].playerX === "DISCONNECTED") {
+  // 					listRooms[i].playerX = data.user.name;
+  // 					listRooms[i].pictureX = data.user.picture;
+  // 				}
+
+  // 				socket.room = listRooms[i].id;
+  // 				socket.join(socket.room);
+
+  // 				socket.to(socket.room).emit("on-reconnect", listRooms[i]);
+  // 				console.log(
+  // 					"Player [" +
+  // 						data.user.name +
+  // 						"] reconnected in room [" +
+  // 						socket.room +
+  // 						"]"
+  // 				);
+
+  // 				if (listRooms[i].lastMove) {
+  // 					socket.emit("move", listRooms[i].lastMove);
+  // 				}
+
+  // 				return;
+  // 			}
+  // 		}
+
+  // 		socket.emit("on-reconnect", null);
+  // 		console.log(
+  // 			"Player [" +
+  // 				data.user.name +
+  // 				"] find room [" +
+  // 				data.roomInfo.id +
+  // 				"] but not exists"
+  // 		);
+  // 	}
+  // });
 };
