@@ -42,9 +42,10 @@ module.exports = (io, socket) => {
         X: socket.user,
         O: null,
       },
-      host: socket.sub.name,
+      host: socket.user.sub,
       password,
       time,
+      status: 1
     };
     listRooms.push(room);
 
