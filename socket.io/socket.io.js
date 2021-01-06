@@ -32,7 +32,7 @@ module.exports = (io, socket) => {
 
   socket.on("create-room-request", (roomName, password, time = 30000) => {
     console.log(
-      "create-room-request" + room + "password: " + password + "time: " + time
+      "create-room-request" + roomName + "password: " + password + "time: " + time
     );
     
     let room = {
@@ -42,7 +42,7 @@ module.exports = (io, socket) => {
         X: socket.user,
         O: null,
       },
-      host: socket.user.name,
+      host: socket.sub.name,
       password,
       time,
     };
@@ -52,6 +52,8 @@ module.exports = (io, socket) => {
     socket.join(socket.room);
 
     socket.emit("create-room-success", room);
+
+    io.emit("has-new-room", room);
 
     console.log("Room [" + socket.room + "] created");
   });
