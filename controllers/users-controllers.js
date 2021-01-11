@@ -12,7 +12,17 @@ const getUserInfo = async (req, res, next) => {
 	if (sub) {
 		const matchedUser = await User.findOne({ sub });
 		if (matchedUser) {
-			res.json(matchedUser);
+			const { displayName, point, win, lost, draw, total } = matchedUser;
+			res.json({
+				info: { displayName },
+				trophy: {
+					point,
+					win,
+					lost,
+					draw,
+					total,
+				},
+			});
 		} else {
 			const createdUser = new User({
 				sub,
@@ -20,7 +30,19 @@ const getUserInfo = async (req, res, next) => {
 			});
 			createdUser
 				.save()
-				.then((document) => res.json(document))
+				.then((document) => {
+					const { displayName, point, win, lost, draw, total } = document;
+					res.json({
+						info: { displayName },
+						trophy: {
+							point,
+							win,
+							lost,
+							draw,
+							total,
+						},
+					});
+				})
 				.catch(() => {
 					next(new HttpError("Internal Server Error", 500));
 				});
@@ -31,12 +53,23 @@ const getUserInfo = async (req, res, next) => {
 const updateUserInfo = async (req, res, next) => {
 	const { sub } = req.user || {};
 	const { displayName } = req.body || {};
-	console.log(displayName);
 	if (sub) {
 		const matchedUser = await User.findOne({ sub });
 		if (matchedUser) {
 			matchedUser.displayName = displayName;
-			matchedUser.save().then((document) => res.json(document));
+			matchedUser.save().then((document) => {
+				const { displayName, point, win, lost, draw, total } = document;
+				res.json({
+					info: { displayName },
+					trophy: {
+						point,
+						win,
+						lost,
+						draw,
+						total,
+					},
+				});
+			});
 		} else {
 			return next(new HttpError("User not found", 404));
 		}
