@@ -6,6 +6,43 @@ const HttpError = require("../models/http-error");
 
 const User = require("../models/user");
 
+const getUserInfo = async (req, res, next) => {
+	const { sub } = req.user || {};
+	const { name } = req.body.user || {};
+	if (sub) {
+		const matchedUser = await User.findOne({ sub });
+		if (matchedUser) {
+			res.json(matchedUser);
+		} else {
+			const createdUser = new User({
+				sub,
+				displayName: name,
+			});
+			createdUser
+				.save()
+				.then((document) => res.json(document))
+				.catch(() => {
+					next(new HttpError("Internal Server Error", 500));
+				});
+		}
+	} else return next(new HttpError("User not found", 404));
+};
+
+const updateUserInfo = async (req, res, next) => {
+	const { sub } = req.user || {};
+	const { displayName } = req.body || {};
+	console.log(displayName);
+	if (sub) {
+		const matchedUser = await User.findOne({ sub });
+		if (matchedUser) {
+			matchedUser.displayName = displayName;
+			matchedUser.save().then((document) => res.json(document));
+		} else {
+			return next(new HttpError("User not found", 404));
+		}
+	} else return next(new HttpError("User not found", 404));
+};
+
 const getUserById = async (req, res, next) => {
 	const userID = req.params.uid;
 
@@ -428,3 +465,5 @@ exports.loginSocial = loginSocial;
 exports.updateUser = updateUser;
 exports.updateUserPassword = updateUserPassword;
 exports.getOnline = getOnline;
+exports.getUserInfo = getUserInfo;
+exports.updateUserInfo = updateUserInfo;

@@ -6,7 +6,8 @@ const fileUpload = require("../middleware/uploadImageUsers");
 
 const router = express.Router();
 
-router.get("/:uid", usersControllers.getUserById);
+router.post("/info/get", usersControllers.getUserInfo);
+router.post("/info/update", usersControllers.updateUserInfo);
 
 router.post(
 	"/signup",
