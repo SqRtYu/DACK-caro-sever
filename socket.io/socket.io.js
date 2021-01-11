@@ -18,7 +18,9 @@ module.exports = (io, socket) => {
 			({ sub }) => sub && sub !== user.sub
 		);
 		socket.emit("get-online", currentOnlineUsers);
-		socket.emit("get-rooms", listRooms);
+
+		const listOnlineRooms = listRooms.filter((room) => room.isQuick === false);
+		socket.emit("get-rooms", listOnlineRooms);
 		// Send to old user that new user has just logged in
 		socket.broadcast.emit("user-online", { ...user, socketId: socket.id });
 		// Save User to Socket
@@ -78,6 +80,7 @@ module.exports = (io, socket) => {
 			password,
 			time,
 			status: 1,
+			isQuick: false,
 		};
 		listRooms.push(room);
 
@@ -250,57 +253,70 @@ module.exports = (io, socket) => {
 
 	socket.on("join-room-quick", (data) => {
 		console.log("join-room-quick");
-		socket.data = data;
 
-		for (let i = 0; i < listRooms.length; i++) {
-			if (listRooms[i].playerO == null) {
-				listRooms[i].playerO = data.name;
-				listRooms[i].pictureO = data.picture;
-				socket.room = listRooms[i].id;
+		const listQuickRooms = listRooms.filter((room) => room.isQuick === true);
+
+		console.log(listQuickRooms);
+
+		let flag = false;
+
+		listQuickRooms.map((room) => {
+			if(room.players.O === null){
+				room.players.O = socket.user;
+				console.log(room.id);
+				socket.room = room.id;
 				socket.join(socket.room);
+				io.in(room.id).emit("join-room-quick-success", room);
 
-				io.in(listRooms[i].id).emit("join-room-quick-success", listRooms[i]);
-
-				console.log("Room [" + socket.room + "] played");
-				return;
+				console.log("Quick room [" + socket.room + "] played");
+				flag = true;
 			}
-		}
+		})
+
+		if(flag === true) return;
 
 		let room = {
-			id: Date.now(),
-			playerX: data.name,
-			pictureX: data.picture,
-			playerO: null,
-			pictureO: null,
-		};
+			id: Date.now() + socket.user.sub,
+			players: {
+				X: socket.user,
+				O: null
+			},
+			host: socket.user,
+			time: 30,
+			status: 2,
+			isQuick: true,
+		}
+
 		listRooms.push(room);
 
 		socket.room = room.id;
+		socket.roomInfo = room;
 		socket.join(socket.room);
 
-		console.log("Room [" + socket.room + "] created");
+		console.log("Quick room [" + socket.room + "] created");
 	});
 
 	socket.on("move", (data) => {
 		console.log("move");
 		console.log(socket.id);
+		console.log(socket.room);
 		socket.to(socket.room).emit("move", data);
 
-		for (let i = 0; i < listRooms.length; i++) {
-			if (listRooms[i].id == socket.room) {
-				listRooms[i].lastMove = data;
+		listRooms.map((room) => {
+			if(room.id === socket.room) {
+				room.lastMove = data;
 			}
-		}
+		})
 	});
 
 	socket.on("chat", (data) => {
 		console.log("chat" + data);
 		socket.emit("chat", {
-			sender: socket.data.name,
+			sender: socket.user.sub,
 			message: data,
 		});
 		socket.to(socket.room).emit("chat", {
-			sender: socket.data.name,
+			sender: socket.user.sub,
 			message: data,
 		});
 	});
