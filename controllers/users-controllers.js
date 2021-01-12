@@ -106,30 +106,7 @@ const searchUserInfo = async (req, res, next) => {
 					total,
 				},
 			});
-		} else {
-			const createdUser = new User({
-				sub,
-				displayName: name,
-			});
-			createdUser
-				.save()
-				.then((document) => {
-					const { displayName, point, win, lost, draw, total } = document;
-					res.json({
-						info: { displayName },
-						trophy: {
-							point,
-							win,
-							lost,
-							draw,
-							total,
-						},
-					});
-				})
-				.catch(() => {
-					next(new HttpError("Internal Server Error", 500));
-				});
-		}
+		} else return next(new HttpError("User not found", 404));
 	} else return next(new HttpError("User not found", 404));
 };
 
