@@ -4,21 +4,23 @@ const uniqueValidator = require("mongoose-unique-validator");
 const Schema = mongoose.Schema;
 
 const gameSchema = new Schema({
-    xPlayer: { type: mongoose.Types.ObjectId, required: true, ref: "User" },
-    oPlayer: { type: mongoose.Types.ObjectId, required: true, ref: "User" },
-    winCells: [{
-        coorX: {type: Number, required: true},
-        coorY: {type: Number, required: true},
-    }],
+    xPlayer: { type: String, required: true },
+    oPlayer: { type: String, required: true },
     history: [{
-        x: {type: Number, required: true},
-        y: {type: Number, required: true},
+        x: {type: Number},
+        y: {type: Number},
         square: [[{type: String}]],
     }],
     chatHistory: [{
-        sender: {type: String, required: true},
-        message: {type: String, required: true},
-    }]
+        sender: {type: String},
+        message: {type: String},
+    }],
+    winCells: [{
+        coorX: {type: Number},
+        coorY: {type: Number},
+    }],
+    isDraw: {type: Boolean},
+    winner: {type: String},
 });
 
 gameSchema.plugin(uniqueValidator);

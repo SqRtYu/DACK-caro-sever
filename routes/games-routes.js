@@ -5,6 +5,8 @@ const gamesControllers = require("../controllers/games-controllers");
 
 const router = express.Router();
 
-router.post("/", gamesControllers.saveGame);
+router.post("/save", gamesControllers.saveGame);
+
+router.get("/:sub", gamesControllers.getGameByUser);
 
 module.exports = router;

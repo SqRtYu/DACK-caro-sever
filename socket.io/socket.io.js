@@ -59,7 +59,7 @@ module.exports = (io, socket) => {
 		}
 	});
 
-	socket.on("create-room-request", (roomName, password, time = 30000) => {
+	socket.on("create-room-request", (roomName, password, time = 30) => {
 		console.log(
 			"create-room-request" +
 				roomName +
@@ -212,26 +212,21 @@ module.exports = (io, socket) => {
 		console.log("disconnect");
 
 		socket.broadcast.emit("user-offline", socket.id);
-		// socket.removeAllListeners();
 
 		socket.leave(socket.room);
 
 		let room = listRooms.find((room) => room.id === socket.room);
-		console.log(room);
 		if (room && room.length) {
 			room = room[0];
-			// neu no la X va thang O ko con
 			if (room.players.O == null) {
 				listRooms = listRooms.filter((room) => room.id !== socket.room);
 				console.log("Room [" + socket.room + "] destroyed");
 			} else {
-				// Neu no la X va thang O con
-				// Neu no la O
 				if (room.players.O.sub === socket.user.sub) {
-					room.players.O = null;
+					room.players.O.name = "DISCONNECTED";
 				}
 				if (room.players.X.sub === socket.user.sub) {
-					room.players.X = null;
+					room.players.X.name = "DISCONNECTED";
 				}
 
 				if (room.players.O === null && room.players.X === null) {
@@ -276,14 +271,13 @@ module.exports = (io, socket) => {
 		if(flag === true) return;
 
 		let room = {
-			id: Date.now() + socket.user.sub,
+			id: Date.now(),
 			players: {
 				X: socket.user,
 				O: null
 			},
 			host: socket.user,
 			time: 30,
-			status: 2,
 			isQuick: true,
 		}
 
@@ -297,9 +291,6 @@ module.exports = (io, socket) => {
 	});
 
 	socket.on("move", (data) => {
-		console.log("move");
-		console.log(socket.id);
-		console.log(socket.room);
 		socket.to(socket.room).emit("move", data);
 
 		listRooms.map((room) => {
@@ -310,7 +301,6 @@ module.exports = (io, socket) => {
 	});
 
 	socket.on("chat", (data) => {
-		console.log("chat" + data);
 		socket.emit("chat", {
 			sender: socket.user.sub,
 			message: data,
@@ -341,12 +331,10 @@ module.exports = (io, socket) => {
 
 	// draw
 	socket.on("draw-request", () => {
-		console.log("draw-request");
 		socket.to(socket.room).emit("draw-request");
 	});
 
 	socket.on("draw-result", (data) => {
-		console.log("draw-result");
 		socket.to(socket.room).emit("draw-result", data);
 	});
 

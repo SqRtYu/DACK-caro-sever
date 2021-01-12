@@ -23,7 +23,7 @@ const userSchema = new Schema({
 	lost: { type: Number, default: 0 },
 	draw: { type: Number, default: 0 },
 	total: { type: Number, default: 0 },
-	// games: [{ type: mongoose.Types.ObjectId, required: true, ref: "Game" }],
+	games: [{ type: mongoose.Types.ObjectId, required: true, ref: "Game" }],
 });
 
 userSchema.plugin(uniqueValidator);
