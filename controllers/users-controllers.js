@@ -524,6 +524,35 @@ const getOnline = async (req, res, next) => {
 	});
 };
 
+const getRankingUser = async (req, res, next) => {
+	let rankingUsers;
+
+	try {
+		rankingUsers = await User.find({})
+			.sort({
+				point: "descending",
+				total: "ascending",
+				win: "descending",
+				lost: "ascending",
+			})
+			.limit(3);
+	} catch (err) {
+		const error = new HttpError(
+			"Fetching users failed, please try again later.",
+			500
+		);
+		return next(error);
+	}
+
+	if (rankingUsers.length === 0) {
+		return next(new HttpError("Could not find users", 404));
+	}
+
+	res.json({
+		users: rankingUsers.map((user) => user.toObject({ getters: true })),
+	});
+};
+
 exports.getUserById = getUserById;
 exports.signup = signup;
 exports.login = login;
@@ -535,3 +564,4 @@ exports.getOnline = getOnline;
 exports.getUserInfo = getUserInfo;
 exports.updateUserInfo = updateUserInfo;
 exports.searchUserInfo = searchUserInfo;
+exports.getRankingUser = getRankingUser;
