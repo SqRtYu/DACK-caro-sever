@@ -8,6 +8,7 @@ const router = express.Router();
 
 router.post("/info/get", usersControllers.getUserInfo);
 router.post("/info/update", usersControllers.updateUserInfo);
+router.post("/info/search", usersControllers.searchUserInfo);
 
 router.post(
 	"/signup",

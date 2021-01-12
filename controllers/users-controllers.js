@@ -3,12 +3,13 @@ const { validationResult } = require("express-validator");
 const jwt = require("jsonwebtoken");
 
 const HttpError = require("../models/http-error");
+const user = require("../models/user");
 
 const User = require("../models/user");
 
 const getUserInfo = async (req, res, next) => {
 	const { sub } = req.user || {};
-	const { name } = req.body.user || {};
+	const { name, picture } = req.body.user || {};
 	if (sub) {
 		const matchedUser = await User.findOne({ sub });
 		if (matchedUser) {
@@ -27,6 +28,10 @@ const getUserInfo = async (req, res, next) => {
 			const createdUser = new User({
 				sub,
 				displayName: name,
+				picture,
+				created_at:
+					(req.body.user || {})["https://carona.netlify.app/created_at"] ||
+					new Date().toISOString(),
 			});
 			createdUser
 				.save()
@@ -72,6 +77,58 @@ const updateUserInfo = async (req, res, next) => {
 			});
 		} else {
 			return next(new HttpError("User not found", 404));
+		}
+	} else return next(new HttpError("User not found", 404));
+};
+
+const searchUserInfo = async (req, res, next) => {
+	const { sub } = req.body || {};
+	if (sub) {
+		const matchedUser = await User.findOne({ sub });
+		if (matchedUser) {
+			const {
+				displayName,
+				picture,
+				created_at,
+				point,
+				win,
+				lost,
+				draw,
+				total,
+			} = matchedUser;
+			res.json({
+				info: { displayName, picture, created_at },
+				trophy: {
+					point,
+					win,
+					lost,
+					draw,
+					total,
+				},
+			});
+		} else {
+			const createdUser = new User({
+				sub,
+				displayName: name,
+			});
+			createdUser
+				.save()
+				.then((document) => {
+					const { displayName, point, win, lost, draw, total } = document;
+					res.json({
+						info: { displayName },
+						trophy: {
+							point,
+							win,
+							lost,
+							draw,
+							total,
+						},
+					});
+				})
+				.catch(() => {
+					next(new HttpError("Internal Server Error", 500));
+				});
 		}
 	} else return next(new HttpError("User not found", 404));
 };
@@ -500,3 +557,4 @@ exports.updateUserPassword = updateUserPassword;
 exports.getOnline = getOnline;
 exports.getUserInfo = getUserInfo;
 exports.updateUserInfo = updateUserInfo;
+exports.searchUserInfo = searchUserInfo;
