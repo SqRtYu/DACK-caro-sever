@@ -260,8 +260,12 @@ module.exports = (io, socket) => {
 
   const chooseQuickRoom = (point) => {
     const listQuickRooms = listRooms.filter(
-      (room) => room.isQuick === true && room.players.O === null
+      (room) =>
+        room.isQuick === true &&
+        (room.players.O === null || room.players.X === null)
     );
+
+    console.log(listQuickRooms.length);
 
     if (listQuickRooms.length === 0) return false;
 
@@ -269,7 +273,12 @@ module.exports = (io, socket) => {
     let minDifferencePoint = -1;
 
     listQuickRooms.map((room) => {
-      let differencePoint = Math.abs(room.players.X.point - point);
+      let differencePoint;
+      if (room.players.O === null) {
+        differencePoint = Math.abs(room.players.X.trophy.point - point);
+      } else {
+        differencePoint = Math.abs(room.players.O.trophy.point - point);
+      }
       if (minDifferencePoint < differencePoint) {
         minDifferencePoint = differencePoint;
         pickedRoom = room;
@@ -281,18 +290,15 @@ module.exports = (io, socket) => {
   socket.on("join-room-quick", () => {
     console.log("join-room-quick");
 
-    const listQuickRooms = listRooms.filter((room) => room.isQuick === true);
-    console.log(listQuickRooms);
-
-    const mostResonableRoom = chooseQuickRoom(socket.user.point);
-
-    console.log("room chọn");
-    console.log(mostResonableRoom);
+    const mostResonableRoom = chooseQuickRoom(socket.user.trophy.point);
 
     if (mostResonableRoom) {
-      mostResonableRoom.players.O = socket.user;
+      if (mostResonableRoom.players.O === null) mostResonableRoom.players.O = socket.user;
+      else mostResonableRoom.players.X = socket.user;
       socket.room = mostResonableRoom.id;
+      socket.roomInfo = mostResonableRoom;
       socket.join(socket.room);
+      
       io.in(mostResonableRoom.id).emit(
         "join-room-quick-success",
         mostResonableRoom
@@ -323,17 +329,16 @@ module.exports = (io, socket) => {
   });
 
   socket.on("stop-join-room-quick", () => {
-	const listQuickRooms = listRooms.filter((room) => room.isQuick === true);
+    const listQuickRooms = listRooms.filter((room) => room.isQuick === true);
 
-	listQuickRooms.map((room) => {
-		if(room.players.X === socket.user.sub && room.players.O === null){
-			listRooms = listRooms.filter((room) => room.id !== socket.room);
-			return;
-		}
-	})
+    listQuickRooms.map((room) => {
+      if (room.players.X.sub === socket.user.sub && room.players.O === null) {
+        listRooms = listRooms.filter((room) => room.id !== socket.room);
+        return;
+      }
+    });
 
-	socket.leave(socket.room);
-
+    socket.leave(socket.room);
   });
 
   socket.on("move", (data) => {
