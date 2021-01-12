@@ -22,8 +22,8 @@ module.exports = (io, socket) => {
 	});
 
 	socket.on("get-current-room-list", () => {
-		const listOnlineRooms = listRooms.filter((room) => room.isQuick === false);
-		socket.emit("get-current-room-list", listOnlineRooms);
+		// const listOnlineRooms = listRooms.filter((room) => room.isQuick === false);
+		socket.emit("get-current-room-list", listRooms);
 	});
 
 	socket.on("join-room-request", (roomId, password) => {
@@ -52,10 +52,10 @@ module.exports = (io, socket) => {
 				socket.emit("join-room-success", room);
 				io.to(room.host.socketId).emit("room-detail-update", room);
 
-				const listOnlineRooms = listRooms.filter(
-					(room) => room.isQuick === false
-				);
-				io.emit("get-current-room-list", listOnlineRooms);
+				// const listOnlineRooms = listRooms.filter(
+				// 	(room) => room.isQuick === false
+				// );
+				io.emit("get-current-room-list", listRooms);
 			} else socket.emit("join-room-fail", "Sai mật khẩu");
 		}
 	});
@@ -82,8 +82,8 @@ module.exports = (io, socket) => {
 
 		socket.emit("join-room-success", room);
 
-		const listOnlineRooms = listRooms.filter((room) => room.isQuick === false);
-		io.emit("get-current-room-list", listOnlineRooms);
+		// const listOnlineRooms = listRooms.filter((room) => room.isQuick === false);
+		io.emit("get-current-room-list", listRooms);
 		// io.emit("has-new-room", room);
 
 		console.log("Room [" + socket.room + "] created");
@@ -109,10 +109,10 @@ module.exports = (io, socket) => {
 			listRooms = listRooms.map((oldRoom) =>
 				oldRoom.id === room.id ? room : oldRoom
 			);
-			const listOnlineRooms = listRooms.filter(
-				(room) => room.isQuick === false
-			);
-			io.emit("get-current-room-list", listOnlineRooms);
+			// const listOnlineRooms = listRooms.filter(
+			// 	(room) => room.isQuick === false
+			// );
+			io.emit("get-current-room-list", listRooms);
 
 			io.to(room.host.socketId).emit("room-detail-update", room);
 			io.to(room.host.socketId).emit("accept-invite-request", socket.user);
@@ -153,18 +153,18 @@ module.exports = (io, socket) => {
 					listRooms = listRooms.filter((room) => room.id !== socket.room);
 					// xoa room
 					// io.emit("room-list-delete-room", socket.roomInfo.id);
-					const listOnlineRooms = listRooms.filter(
-						(room) => room.isQuick === false
-					);
-					io.emit("get-current-room-list", listOnlineRooms);
+					// const listOnlineRooms = listRooms.filter(
+					// 	(room) => room.isQuick === false
+					// );
+					io.emit("get-current-room-list", listRooms);
 				} else {
 					// thong bao cho room
 					io.to(socket.room).emit("room-detail-update", room);
 					// thong bao cho moi nguoi
-					const listOnlineRooms = listRooms.filter(
-						(room) => room.isQuick === false
-					);
-					io.emit("get-current-room-list", listOnlineRooms);
+					// const listOnlineRooms = listRooms.filter(
+					// 	(room) => room.isQuick === false
+					// );
+					io.emit("get-current-room-list", listRooms);
 				}
 
 				delete socket.room;
@@ -181,8 +181,8 @@ module.exports = (io, socket) => {
 				? { ...room, status: roomStatusMapping.Playing }
 				: room
 		);
-		const listOnlineRooms = listRooms.filter((room) => room.isQuick === false);
-		io.emit("get-current-room-list", listOnlineRooms);
+		// const listOnlineRooms = listRooms.filter((room) => room.isQuick === false);
+		io.emit("get-current-room-list", listRooms);
 	});
 
 	socket.on("out-game", () => {
@@ -190,33 +190,59 @@ module.exports = (io, socket) => {
 		socket.leave(socket.room);
 		const room = listRooms.find((room) => room.id === socket.room);
 		if (room) {
-			// neu no la X va thang O ko con
-			if (room.players.O == null) {
-				listRooms = listRooms.filter((room) => room.id !== socket.room);
-				console.log("Room [" + socket.room + "] destroyed");
-			} else {
-				// Neu no la X va thang O con
-				// Neu no la O
-				if (room.players.O && room.players.O.sub === socket.user.sub) {
-					room.players.O = null;
+			const isPlayerX =
+				room.players.X && socket.user.sub === room.players.X.sub;
+			if (isPlayerX) {
+				// neu no la X va thang O ko con
+				if (room.players.O == null) {
+					console.log("Room [" + socket.room + "] destroyed");
+					listRooms = listRooms.filter((room) => room.id !== socket.room);
+					// const listOnlineRooms = listRooms.filter((room) => room.isQuick === false);
+					io.emit("get-current-room-list", listRooms);
+					delete socket.room;
+					delete socket.roomInfo;
 				}
-				if (room.players.X && room.players.X.sub === socket.user.sub) {
+				// thang O con`
+				else {
 					room.players.X = null;
+					// const listOnlineRooms = listRooms.filter((room) => room.isQuick === false);
+					io.emit("get-current-room-list", listRooms);
+					io.to(socket.room).emit("enemy-out");
+					delete socket.room;
+					delete socket.roomInfo;
+				}
+			} else {
+				if (room.players.X == null) {
+					console.log("Room [" + socket.room + "] destroyed");
+					listRooms = listRooms.filter((room) => room.id !== socket.room);
+					// const listOnlineRooms = listRooms.filter((room) => room.isQuick === false);
+					io.emit("get-current-room-list", listRooms);
+					delete socket.room;
+					delete socket.roomInfo;
+				}
+				// thang X con`
+				else {
+					room.players.O = null;
+					// const listOnlineRooms = listRooms.filter((room) => room.isQuick === false);
+					io.emit("get-current-room-list", listRooms);
+					io.to(socket.room).emit("enemy-out");
+					delete socket.room;
+					delete socket.roomInfo;
 				}
 
-				if (room.players.O === null && room.players.X === null) {
-					listRooms = listRooms.filter((room) => room.id !== socket.room);
-					console.log("Room [" + socket.room + "] destroyed");
-				} else {
-					io.to(room.id).emit("disconnectRoom", room);
-					console.log(
-						"Player [" +
-							socket.user.nickname +
-							"] leave room [" +
-							socket.room +
-							"]"
-					);
-				}
+				// if (room.players.O === null && room.players.X === null) {
+				// 	listRooms = listRooms.filter((room) => room.id !== socket.room);
+				// 	console.log("Room [" + socket.room + "] destroyed");
+				// } else {
+				// 	io.to(room.id).emit("disconnectRoom", room);
+				console.log(
+					"Player [" +
+						socket.user.nickname +
+						"] leave room [" +
+						socket.room +
+						"]"
+				);
+				// 	}
 			}
 		}
 	});
