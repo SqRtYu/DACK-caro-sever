@@ -126,28 +126,29 @@ module.exports = (io, socket) => {
 			socket.leave(socket.room);
 			const room = listRooms.find((room) => room.id === socket.room);
 			if (room) {
+				const newRoom = JSON.parse(JSON.stringify(room));
 				const isPlayerX =
-					room.players.X && socket.user.sub === room.players.X.sub;
+					newRoom.players.X && socket.user.sub === newRoom.players.X.sub;
 
-				const isHost = room.host && room.host.sub === socket.user.sub;
+				const isHost = newRoom.host && newRoom.host.sub === socket.user.sub;
 
 				// neu no la host
 				if (isHost) {
 					// neu no la X va la host
 					if (isPlayerX) {
-						room.host = room.players.O;
-						room.players.X = null;
+						newRoom.host = newRoom.players.O;
+						newRoom.players.X = null;
 					}
 					// neu no la host va la O
 					else {
-						room.host = room.players.X;
-						room.players.O = null;
+						newRoom.host = newRoom.players.X;
+						newRoom.players.O = null;
 					}
 				} else {
-					if (isPlayerX) room.players.X = null;
-					else room.players.O = null;
+					if (isPlayerX) newRoom.players.X = null;
+					else newRoom.players.O = null;
 				}
-				if (room.players.X === null && room.players.O === null) {
+				if (newRoom.players.X === null && newRoom.players.O === null) {
 					console.log("Huy room ", socket.room);
 					// xoa ra khoi list
 					listRooms = listRooms.filter((room) => room.id !== socket.room);
@@ -159,7 +160,10 @@ module.exports = (io, socket) => {
 					io.emit("get-current-room-list", listOnlineRooms);
 				} else {
 					// thong bao cho room
-					io.to(socket.room).emit("room-detail-update", room);
+					listRooms = listRooms.map((room) =>
+						room.id === newRoom.id ? { ...newRoom } : room
+					);
+					io.to(socket.room).emit("room-detail-update", newRoom);
 					// thong bao cho moi nguoi
 					const listOnlineRooms = listRooms.filter(
 						(room) => room.isQuick === false
@@ -232,7 +236,7 @@ module.exports = (io, socket) => {
 		const room = listRooms.find((room) => room.id === socket.room);
 		if (room) {
 			const newRoom = JSON.parse(JSON.stringify(room));
-			if (newRoom.players.O.name === "DISCONNECTED") {
+			if (newRoom.players.O && newRoom.players.O.name === "DISCONNECTED") {
 				listRooms = listRooms.filter((room) => room.id !== socket.room);
 				console.log("Room [" + socket.room + "] destroyed");
 			} else {
