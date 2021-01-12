@@ -4,28 +4,31 @@ let listRooms = [];
 
 module.exports = (io, socket) => {
 	socket.on("user-online", (user) => {
-		const currentUsers = Array.from(io.sockets.sockets).map(
-			([socketId, { user }]) => ({
-				socketId,
-				...user,
-			})
-		);
+		console.log(user);
 		// if (currentUsers.filter(({ sub }) => sub && sub === user.sub).length) {
 		// 	socket.emit("force-logout", "User already logged in");
 		// } else {
 		// Send Current Online User List for the new user
-		const currentOnlineUsers = currentUsers.filter(
-			({ sub }) => sub && sub !== user.sub
-		);
-		socket.emit("get-online", currentOnlineUsers);
 
-		const listOnlineRooms = listRooms.filter((room) => room.isQuick === false);
-		socket.emit("get-rooms", listOnlineRooms);
 		// Send to old user that new user has just logged in
-		socket.broadcast.emit("user-online", { ...user, socketId: socket.id });
+		// socket.broadcast.emit("user-online", { ...user, socketId: socket.id });
 		// Save User to Socket
 		socket.user = { ...user, socketId: socket.id };
 		// }
+	});
+
+	socket.on("get-user-online-list", () => {
+		const currentUsers = Array.from(io.sockets.sockets).map(
+			([socketId, { user }]) => ({
+				...user,
+			})
+		);
+		io.emit("update-user-online-list", currentUsers);
+	});
+
+	socket.on("get-current-room-list", () => {
+		const listOnlineRooms = listRooms.filter((room) => room.isQuick === false);
+		socket.emit("get-current-room-list", listOnlineRooms);
 	});
 
 	socket.on("join-room-request", (roomId, password) => {
@@ -54,22 +57,17 @@ module.exports = (io, socket) => {
 				socket.emit("join-room-success", room);
 				io.to(room.host.socketId).emit("room-detail-update", room);
 				//
-				io.emit("room-list-update-room", room);
+				// io.emit("room-list-update-room", room);
+				const listOnlineRooms = listRooms.filter(
+					(room) => room.isQuick === false
+				);
+				io.emit("get-current-room-list", listOnlineRooms);
 			}
 		}
 	});
 
-	socket.on("create-room-request", (roomName, password, time = 30) => {
-		console.log(
-			"create-room-request" +
-				roomName +
-				"password: " +
-				password +
-				"time: " +
-				time
-		);
-
-		let room = {
+	socket.on("create-room-request", (roomName, password, time = 30000) => {
+		const room = {
 			id: Date.now(),
 			roomName,
 			players: {
@@ -88,9 +86,11 @@ module.exports = (io, socket) => {
 		socket.roomInfo = room;
 		socket.join(socket.room);
 
-		socket.emit("create-room-success", room);
+		socket.emit("join-room-success", room);
 
-		io.emit("has-new-room", room);
+		const listOnlineRooms = listRooms.filter((room) => room.isQuick === false);
+		io.emit("get-current-room-list", listOnlineRooms);
+		// io.emit("has-new-room", room);
 
 		console.log("Room [" + socket.room + "] created");
 	});
@@ -151,12 +151,20 @@ module.exports = (io, socket) => {
 			// xoa ra khoi list
 			listRooms = listRooms.filter((room) => room.id !== socket.room);
 			// xoa room
-			io.emit("room-list-delete-room", socket.roomInfo.id);
+			// io.emit("room-list-delete-room", socket.roomInfo.id);
+			const listOnlineRooms = listRooms.filter(
+				(room) => room.isQuick === false
+			);
+			io.emit("get-current-room-list", listOnlineRooms);
 		} else {
 			// thong bao cho room
 			io.to(socket.room).emit("room-detail-update", socket.roomInfo);
 			// thong bao cho moi nguoi
-			io.emit("room-list-update-room", socket.roomInfo);
+			// io.emit("room-list-update-room", socket.roomInfo);
+			const listOnlineRooms = listRooms.filter(
+				(room) => room.isQuick === false
+			);
+			io.emit("get-current-room-list", listOnlineRooms);
 		}
 
 		socket.leave(socket.room);
@@ -209,9 +217,13 @@ module.exports = (io, socket) => {
 	});
 
 	socket.on("disconnect", () => {
-		console.log("disconnect");
-
-		socket.broadcast.emit("user-offline", socket.id);
+		const currentUsers = Array.from(io.sockets.sockets).map(
+			([socketId, { user }]) => ({
+				...user,
+			})
+		);
+		socket.broadcast.emit("update-user-online-list", currentUsers);
+		// socket.removeAllListeners();
 
 		socket.leave(socket.room);
 
@@ -256,7 +268,7 @@ module.exports = (io, socket) => {
 		let flag = false;
 
 		listQuickRooms.map((room) => {
-			if(room.players.O === null){
+			if (room.players.O === null) {
 				room.players.O = socket.user;
 				console.log(room.id);
 				socket.room = room.id;
@@ -266,20 +278,20 @@ module.exports = (io, socket) => {
 				console.log("Quick room [" + socket.room + "] played");
 				flag = true;
 			}
-		})
+		});
 
-		if(flag === true) return;
+		if (flag === true) return;
 
 		let room = {
 			id: Date.now(),
 			players: {
 				X: socket.user,
-				O: null
+				O: null,
 			},
 			host: socket.user,
 			time: 30,
 			isQuick: true,
-		}
+		};
 
 		listRooms.push(room);
 
@@ -294,10 +306,10 @@ module.exports = (io, socket) => {
 		socket.to(socket.room).emit("move", data);
 
 		listRooms.map((room) => {
-			if(room.id === socket.room) {
+			if (room.id === socket.room) {
 				room.lastMove = data;
 			}
-		})
+		});
 	});
 
 	socket.on("chat", (data) => {
