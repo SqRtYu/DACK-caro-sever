@@ -21,6 +21,8 @@ const gameSchema = new Schema({
     }],
     isDraw: {type: Boolean},
     winner: {type: String},
+    point: {type: Number},
+    date: {type: Date},
 });
 
 gameSchema.plugin(uniqueValidator);

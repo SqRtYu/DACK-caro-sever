@@ -14,19 +14,8 @@ const saveGame = async (req, res, next) => {
     winCells,
     isDraw,
     winner,
+    date,
   } = req.body;
-
-  const createdGame = new Game({
-    xPlayer,
-    oPlayer,
-    history,
-    chatHistory,
-    winCells,
-    isDraw,
-    winner,
-  });
-
-  console.log(createdGame);
 
   let userX;
   let userO;
@@ -45,14 +34,16 @@ const saveGame = async (req, res, next) => {
   }
 
   //Calculate point
+  let point = 0;
   if (!isDraw) {
-    let point = Math.abs(userX.point - userO.point);
+    point = Math.abs(userX.point - userO.point);
     if(point > 100) point = 100;
 
     if (winner === userX.sub) {
       if (userX.point > userO.point) {
         userX.point += 50;
         userO.point -= 50;
+        point = 0;
       } else {
         userX.point += point + 50;
         userO.point -= point + 50;
@@ -63,6 +54,7 @@ const saveGame = async (req, res, next) => {
       if (userO.point > userX.point) {
         userO.point += 50;
         userX.point -= 50;
+        point = 0;
       } else {
         userO.point += point + 50;
         userX.point -= point + 50;
@@ -83,6 +75,18 @@ const saveGame = async (req, res, next) => {
 
   console.log(userX.point);
   console.log(userO.point);
+
+  const createdGame = new Game({
+    xPlayer,
+    oPlayer,
+    history,
+    chatHistory,
+    winCells,
+    isDraw,
+    winner,
+    point: point + 50,
+    date,
+  });
 
   try {
     const sess = await mongoose.startSession();
@@ -109,7 +113,7 @@ const getGameByUser = async (req, res, next) => {
   
     let userWithGames;
     try {
-        userWithGames =  await User.findOne({sub}).populate('games');
+        userWithGames =  await User.findOne({sub}).sort({ date: "descending" }).populate('games');
     } catch (err) {
       const error = new HttpError(
         "Fetching games failed, please try again later.",
@@ -123,9 +127,11 @@ const getGameByUser = async (req, res, next) => {
         new HttpError("Could not find games for the provided user sub", 404)
       );
     }
+
+    const games = userWithGames.games;
   
     res.json({
-      games: userWithGames.games.map(game => game.toObject({ getters: true })),
+      games: games.map(game => game.toObject({ getters: true })),
     });
   };
   
