@@ -51,8 +51,7 @@ module.exports = (io, socket) => {
 				socket.join(socket.room);
 				socket.emit("join-room-success", room);
 				io.to(room.host.socketId).emit("room-detail-update", room);
-				//
-				// io.emit("room-list-update-room", room);
+
 				const listOnlineRooms = listRooms.filter(
 					(room) => room.isQuick === false
 				);
@@ -104,9 +103,17 @@ module.exports = (io, socket) => {
 
 			socket.room = room.id;
 			socket.roomInfo = room;
-			socket.join(socket.room);
+			socket.join(room.id);
 			socket.emit("join-room-success", room);
-			io.emit("room-list-update-room", room);
+
+			listRooms = listRooms.map((oldRoom) =>
+				oldRoom.id === room.id ? room : oldRoom
+			);
+			const listOnlineRooms = listRooms.filter(
+				(room) => room.isQuick === false
+			);
+			io.emit("get-current-room-list", listOnlineRooms);
+
 			io.to(room.host.socketId).emit("room-detail-update", room);
 			io.to(room.host.socketId).emit("accept-invite-request", socket.user);
 		} else {
@@ -115,57 +122,55 @@ module.exports = (io, socket) => {
 	});
 
 	socket.on("leave-room", () => {
-		const isPlayerX =
-			socket.roomInfo.players.X &&
-			socket.user.sub === socket.roomInfo.players.X.sub;
+		if (socket.room && socket.roomInfo) {
+			socket.leave(socket.room);
+			const room = listRooms.find((room) => room.id === socket.room);
+			if (room) {
+				const isPlayerX =
+					room.players.X && socket.user.sub === room.players.X.sub;
 
-		const isHost =
-			socket.roomInfo.host && socket.roomInfo.host.sub === socket.user.sub;
+				const isHost = room.host && room.host.sub === socket.user.sub;
 
-		// neu no la host
-		if (isHost) {
-			// neu no la X va la host
-			if (isPlayerX) {
-				socket.roomInfo.host = socket.roomInfo.players.O;
-				socket.roomInfo.players.X = null;
+				// neu no la host
+				if (isHost) {
+					// neu no la X va la host
+					if (isPlayerX) {
+						room.host = room.players.O;
+						room.players.X = null;
+					}
+					// neu no la host va la O
+					else {
+						room.host = room.players.X;
+						room.players.O = null;
+					}
+				} else {
+					if (isPlayerX) room.players.X = null;
+					else room.players.O = null;
+				}
+				if (room.players.X === null && room.players.O === null) {
+					console.log("Huy room ", socket.room);
+					// xoa ra khoi list
+					listRooms = listRooms.filter((room) => room.id !== socket.room);
+					// xoa room
+					// io.emit("room-list-delete-room", socket.roomInfo.id);
+					const listOnlineRooms = listRooms.filter(
+						(room) => room.isQuick === false
+					);
+					io.emit("get-current-room-list", listOnlineRooms);
+				} else {
+					// thong bao cho room
+					io.to(socket.room).emit("room-detail-update", room);
+					// thong bao cho moi nguoi
+					const listOnlineRooms = listRooms.filter(
+						(room) => room.isQuick === false
+					);
+					io.emit("get-current-room-list", listOnlineRooms);
+				}
+
+				delete socket.room;
+				delete socket.roomInfo;
 			}
-			// neu no la host va la O
-			else {
-				socket.roomInfo.host = socket.roomInfo.players.X;
-				socket.roomInfo.players.O = null;
-			}
-		} else {
-			if (isPlayerX) socket.roomInfo.players.X = null;
-			else socket.roomInfo.players.O = null;
 		}
-		if (
-			socket.roomInfo.players.X === null &&
-			socket.roomInfo.players.O === null
-		) {
-			console.log("Huy room ", socket.room);
-			// xoa ra khoi list
-			listRooms = listRooms.filter((room) => room.id !== socket.room);
-			// xoa room
-			// io.emit("room-list-delete-room", socket.roomInfo.id);
-			const listOnlineRooms = listRooms.filter(
-				(room) => room.isQuick === false
-			);
-			io.emit("get-current-room-list", listOnlineRooms);
-		} else {
-			// thong bao cho room
-			io.to(socket.room).emit("room-detail-update", socket.roomInfo);
-			// thong bao cho moi nguoi
-			// io.emit("room-list-update-room", socket.roomInfo);
-			const listOnlineRooms = listRooms.filter(
-				(room) => room.isQuick === false
-			);
-			io.emit("get-current-room-list", listOnlineRooms);
-		}
-
-		socket.leave(socket.room);
-
-		delete socket.room;
-		delete socket.roomInfo;
 	});
 
 	socket.on("start-game-request", () => {
