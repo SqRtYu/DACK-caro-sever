@@ -30,7 +30,7 @@ io.use(verifySocket).on("connection", (socket) => {
 // middlewares
 app.use(bodyParser.json());
 app.use(cors());
-// app.use(verifyAPI);
+app.use(verifyAPI);
 
 // routers
 app.use("/uploads/images", express.static(path.join("uploads", "images")));

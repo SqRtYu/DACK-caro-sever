@@ -494,7 +494,14 @@ const getRankingUser = async (req, res, next) => {
   let rankingUsers;
 
   try {
-    rankingUsers = await User.find({}).sort({ point: "descending" }).limit(3);
+    rankingUsers = await User.find({})
+      .sort({
+        point: "descending",
+        total: "ascending",
+        win: "descending",
+        lost: "ascending",
+      })
+      .limit(3);
   } catch (err) {
     const error = new HttpError(
       "Fetching users failed, please try again later.",

@@ -113,7 +113,7 @@ const getGameByUser = async (req, res, next) => {
   
     let userWithGames;
     try {
-        userWithGames =  await User.findOne({sub}).sort({ date: "descending" }).populate('games');
+        userWithGames =  await User.findOne({sub}).populate('games');
     } catch (err) {
       const error = new HttpError(
         "Fetching games failed, please try again later.",
@@ -129,6 +129,9 @@ const getGameByUser = async (req, res, next) => {
     }
 
     const games = userWithGames.games;
+    games.sort(function(a,b){
+      return new Date(b.date) - new Date(a.date);
+    });
   
     res.json({
       games: games.map(game => game.toObject({ getters: true })),
