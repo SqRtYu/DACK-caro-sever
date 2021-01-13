@@ -17,6 +17,10 @@ const saveGame = async (req, res, next) => {
     date,
   } = req.body;
 
+  history.map((history) => {
+    history.squares = JSON.parse(JSON.stringify(history.squares));
+  })
+
   let userX;
   let userO;
 
