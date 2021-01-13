@@ -6,7 +6,6 @@ const User = require("../models/user");
 
 const saveGame = async (req, res, next) => {
   console.log("save game");
-  console.log(req.body);
   const {
     xPlayer,
     oPlayer,
@@ -21,6 +20,7 @@ const saveGame = async (req, res, next) => {
   history.map((history) => {
     history.squares = JSON.parse(JSON.stringify(history.squares));
   });
+
 
   let userX;
   let userO;
