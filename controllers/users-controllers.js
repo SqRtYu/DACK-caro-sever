@@ -9,14 +9,21 @@ const User = require("../models/user");
 
 const getUserInfo = async (req, res, next) => {
 	const { sub } = req.user || {};
-	const { name, picture, email, isLocked } = req.body.user || {};
+	const { name, picture, email } = req.body.user || {};
 	if (sub) {
 		const matchedUser = await User.findOne({ sub });
 		if (matchedUser) {
-			const { displayName, point, win, lost, draw, total } = matchedUser;
-			res.json({
-				info: { displayName },
+			const {
+				displayName,
+				point,
+				win,
+				lost,
+				draw,
+				total,
 				isLocked,
+			} = matchedUser;
+			res.json({
+				info: { displayName, isLocked },
 				trophy: {
 					point,
 					win,
@@ -39,9 +46,17 @@ const getUserInfo = async (req, res, next) => {
 			createdUser
 				.save()
 				.then((document) => {
-					const { displayName, point, win, lost, draw, total } = document;
+					const {
+						displayName,
+						point,
+						win,
+						lost,
+						draw,
+						total,
+						isLocked,
+					} = document;
 					res.json({
-						info: { displayName },
+						info: { displayName, isLocked },
 						trophy: {
 							point,
 							win,
