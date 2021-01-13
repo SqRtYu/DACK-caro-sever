@@ -6,6 +6,7 @@ const User = require("../models/user");
 
 const saveGame = async (req, res, next) => {
   console.log("save game");
+  console.log(req.body);
   const {
     xPlayer,
     oPlayer,
@@ -25,8 +26,8 @@ const saveGame = async (req, res, next) => {
   let userO;
 
   try {
-    userX = await User.findOne({ sub: xPlayer });
-    userO = await User.findOne({ sub: oPlayer });
+    userX = await User.findOne({ sub: xPlayer.sub });
+    userO = await User.findOne({ sub: oPlayer.sub });
   } catch (err) {
     const error = new HttpError("Creating game failed, please try again.");
     next(error);

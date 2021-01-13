@@ -4,8 +4,14 @@ const uniqueValidator = require("mongoose-unique-validator");
 const Schema = mongoose.Schema;
 
 const gameSchema = new Schema({
-  xPlayer: { type: String, required: true },
-  oPlayer: { type: String, required: true },
+  xPlayer: {
+    sub: { type: String, required: true },
+    displayName: { type: String, required: true },
+  },
+  oPlayer: {
+    sub: { type: String, required: true },
+    displayName: { type: String, required: true },
+  },
   history: [
     {
       x: { type: Number },
