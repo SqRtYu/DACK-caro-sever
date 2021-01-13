@@ -20,7 +20,7 @@ const saveGame = async (req, res, next) => {
 
   history.map((history) => {
     history.squares = JSON.parse(JSON.stringify(history.squares));
-  })
+  });
 
   let userX;
   let userO;
@@ -42,7 +42,7 @@ const saveGame = async (req, res, next) => {
   let point = 0;
   if (!isDraw) {
     point = Math.abs(userX.point - userO.point);
-    if(point > 100) point = 100;
+    if (point > 100) point = 100;
 
     if (winner === userX.sub) {
       if (userX.point > userO.point) {
@@ -73,8 +73,8 @@ const saveGame = async (req, res, next) => {
     userO.draw++;
   }
 
-  if(userX.point < 0) userX.point = 0;
-  if(userO.point < 0) userO.point = 0;
+  if (userX.point < 0) userX.point = 0;
+  if (userO.point < 0) userO.point = 0;
 
   userX.total++;
   userO.total++;
@@ -115,29 +115,28 @@ const saveGame = async (req, res, next) => {
 };
 
 const getGameByUser = async (req, res, next) => {
-    const sub = req.params.sub;
-  
-    let userWithGames;
-    try {
-        userWithGames =  await User.findOne({sub}).populate('games');
-    } catch (err) {
-      const error = new HttpError(
-        "Fetching games failed, please try again later.",
-        500
-      );
-      return next(error);
-    }
-  
-    const games = userWithGames.games;
-    games.sort(function(a,b){
-      return new Date(b.date) - new Date(a.date);
-    });
-  
-    res.json({
-      games: games.map(game => game.toObject({ getters: true })),
-    });
-  };
-  
+  const sub = req.params.sub;
+
+  let userWithGames;
+  try {
+    userWithGames = await User.findOne({ sub }).populate("games");
+  } catch (err) {
+    const error = new HttpError(
+      "Fetching games failed, please try again later.",
+      500
+    );
+    return next(error);
+  }
+
+  const games = userWithGames.games;
+  games.sort(function (a, b) {
+    return new Date(b.date) - new Date(a.date);
+  });
+
+  res.json({
+    games: games.map((game) => game.toObject({ getters: true })),
+  });
+};
 
 exports.saveGame = saveGame;
 exports.getGameByUser = getGameByUser;
