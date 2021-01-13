@@ -232,6 +232,7 @@ module.exports = (io, socket) => {
 	});
 
 	socket.on("disconnect", () => {
+		console.log("DISCONNECTED");
 		socket.leave(socket.room);
 		const room = listRooms.find((room) => room.id === socket.room);
 		if (room) {

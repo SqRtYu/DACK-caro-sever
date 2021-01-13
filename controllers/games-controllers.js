@@ -63,6 +63,7 @@ const saveGame = async (req, res, next) => {
       userX.lost++;
     }
   } else {
+    point = -50;
     userX.draw++;
     userO.draw++;
   }
