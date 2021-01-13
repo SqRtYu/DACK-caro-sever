@@ -9,7 +9,7 @@ const User = require("../models/user");
 
 const getUserInfo = async (req, res, next) => {
 	const { sub } = req.user || {};
-	const { name, picture } = req.body.user || {};
+	const { name, picture, email } = req.body.user || {};
 	if (sub) {
 		const matchedUser = await User.findOne({ sub });
 		if (matchedUser) {
@@ -28,6 +28,8 @@ const getUserInfo = async (req, res, next) => {
 			const createdUser = new User({
 				sub,
 				displayName: name,
+				email,
+				name,
 				picture,
 				created_at:
 					(req.body.user || {})["https://carona.netlify.app/created_at"] ||
