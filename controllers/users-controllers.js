@@ -9,13 +9,14 @@ const User = require("../models/user");
 
 const getUserInfo = async (req, res, next) => {
 	const { sub } = req.user || {};
-	const { name, picture, email } = req.body.user || {};
+	const { name, picture, email, isLocked } = req.body.user || {};
 	if (sub) {
 		const matchedUser = await User.findOne({ sub });
 		if (matchedUser) {
 			const { displayName, point, win, lost, draw, total } = matchedUser;
 			res.json({
 				info: { displayName },
+				isLocked,
 				trophy: {
 					point,
 					win,

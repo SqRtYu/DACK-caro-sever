@@ -23,6 +23,7 @@ const userSchema = new Schema({
 	draw: { type: Number, default: 0 },
 	total: { type: Number, default: 0 },
 	games: [{ type: mongoose.Types.ObjectId, required: true, ref: "Game" }],
+	isLocked: [{type: Boolean, default: false}],
 });
 
 userSchema.plugin(uniqueValidator);

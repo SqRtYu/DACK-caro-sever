@@ -128,12 +128,6 @@ const getGameByUser = async (req, res, next) => {
       return next(error);
     }
   
-    if (!userWithGames || userWithGames.games.length === 0) {
-      return next(
-        new HttpError("Could not find games for the provided user sub", 404)
-      );
-    }
-
     const games = userWithGames.games;
     games.sort(function(a,b){
       return new Date(b.date) - new Date(a.date);
