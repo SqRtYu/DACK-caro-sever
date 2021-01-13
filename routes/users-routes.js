@@ -6,7 +6,7 @@ const fileUpload = require("../middleware/uploadImageUsers");
 
 const router = express.Router();
 
-router.get("/:rank", usersControllers.getRankingUser);
+router.post("/rank", usersControllers.getRankingUser);
 
 router.post("/info/get", usersControllers.getUserInfo);
 router.post("/info/update", usersControllers.updateUserInfo);

@@ -249,7 +249,6 @@ module.exports = (io, socket) => {
 				if (newRoom.players.X && newRoom.players.X.sub === socket.user.sub) {
 					newRoom.players.X.name = "DISCONNECTED";
 				}
-				console.log(newRoom.players.O.name, newRoom.players.X.name);
 				if (
 					(newRoom.players.O || {}).name === "DISCONNECTED" &&
 					(newRoom.players.X || {}).name === "DISCONNECTED"
@@ -263,7 +262,7 @@ module.exports = (io, socket) => {
 					);
 					console.log(
 						"Player [" +
-							socket.user.nickname +
+							socket.user.displayName +
 							"] leave room [" +
 							socket.room +
 							"]"
