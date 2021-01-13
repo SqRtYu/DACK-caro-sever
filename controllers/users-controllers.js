@@ -544,13 +544,11 @@ const getRankingUser = async (req, res, next) => {
 		return next(error);
 	}
 
-	if (rankingUsers.length === 0) {
-		return next(new HttpError("Could not find users", 404));
-	}
+	// if (rankingUsers.length === 0) {
+	// 	return next(new HttpError("Could not find users", 404));
+	// }
 
-	res.json({
-		users: rankingUsers.map((user) => user.toObject({ getters: true })),
-	});
+	res.json(rankingUsers.map((user) => user.toObject({ getters: true })));
 };
 
 exports.getUserById = getUserById;
