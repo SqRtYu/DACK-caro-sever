@@ -7,6 +7,7 @@ const router = express.Router();
 
 router.post("/save", gamesControllers.saveGame);
 
-router.get("/:sub", gamesControllers.getGameByUser);
+router.get("/by-user/:sub", gamesControllers.getGameByUser);
+router.get("/by-id/:id", gamesControllers.getGameById);
 
 module.exports = router;
