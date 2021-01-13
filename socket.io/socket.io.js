@@ -94,11 +94,17 @@ module.exports = (io, socket) => {
   });
 
   socket.on("invite-room", (socketId) => {
+    console.log(socket.roomInfo);
     io.to(socketId).emit("receive-invite-request", socket.roomInfo);
   });
 
   socket.on("reply-invite-request", ({ isAccept, roomInfo: room }) => {
+	const newRoom = listRooms.find((r) => r.id === room.id);
     if (isAccept) {
+      if (newRoom.players.O !== null && newRoom.players.X !== null) {
+		  socket.emit("decline-reply-join-room", "Phòng này đã đủ người!");
+        return;
+      }
       if (room.players.O === null && room.players.X !== null)
         room.players.O = socket.user;
       else if (room.players.O !== null && room.players.X === null)
@@ -128,9 +134,9 @@ module.exports = (io, socket) => {
   socket.on("leave-room", () => {
     if (socket.room && socket.roomInfo) {
       socket.leave(socket.room);
-      const room = listRooms.find((room) => room.id === socket.room);
-      if (room) {
-        const newRoom = JSON.parse(JSON.stringify(room));
+      const newRoom = listRooms.find((room) => room.id === socket.room);
+      if (newRoom) {
+        // const newRoom = JSON.parse(JSON.stringify(room));
         const isPlayerX =
           newRoom.players.X && socket.user.sub === newRoom.players.X.sub;
 
@@ -164,9 +170,9 @@ module.exports = (io, socket) => {
           io.emit("get-current-room-list", listOnlineRooms);
         } else {
           // thong bao cho room
-          listRooms = listRooms.map((room) =>
-            room.id === newRoom.id ? { ...newRoom } : room
-          );
+          //   listRooms = listRooms.map((room) =>
+          //     room.id === newRoom.id ? { ...newRoom } : room
+          //   );
           io.to(socket.room).emit("room-detail-update", newRoom);
           // thong bao cho moi nguoi
           const listOnlineRooms = listRooms.filter(
@@ -217,9 +223,9 @@ module.exports = (io, socket) => {
           (newRoom.players.X || {}).name === "DISCONNECTED"
         ) {
           listRooms = listRooms.filter((room) => room.id !== socket.room);
-		  console.log("Room [" + socket.room + "] destroyed");
-		  
-		  const listOnlineRooms = listRooms.filter(
+          console.log("Room [" + socket.room + "] destroyed");
+
+          const listOnlineRooms = listRooms.filter(
             (room) => room.isQuick === false
           );
           io.emit("get-current-room-list", listOnlineRooms);
@@ -227,7 +233,7 @@ module.exports = (io, socket) => {
           io.to(room.id).emit("disconnectRoom", newRoom);
           listRooms = listRooms.map((room) =>
             room.id === newRoom.id ? { ...newRoom } : room
-		  );
+          );
           console.log(
             "Player [" +
               socket.user.nickname +
@@ -263,9 +269,9 @@ module.exports = (io, socket) => {
           (newRoom.players.X || {}).name === "DISCONNECTED"
         ) {
           listRooms = listRooms.filter((room) => room.id !== socket.room);
-		  console.log("Room [" + socket.room + "] destroyed");
-		  
-		  const listOnlineRooms = listRooms.filter(
+          console.log("Room [" + socket.room + "] destroyed");
+
+          const listOnlineRooms = listRooms.filter(
             (room) => room.isQuick === false
           );
           io.emit("get-current-room-list", listOnlineRooms);
