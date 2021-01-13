@@ -1,6 +1,10 @@
 const User = require("../models/user");
 
 let listRooms = [];
+let listQuickPlayers = [];
+
+const rep = 3;
+const time = 3000;
 
 const roomStatusMapping = {
   Playing: 0,
@@ -213,12 +217,17 @@ module.exports = (io, socket) => {
           (newRoom.players.X || {}).name === "DISCONNECTED"
         ) {
           listRooms = listRooms.filter((room) => room.id !== socket.room);
-          console.log("Room [" + socket.room + "] destroyed");
+		  console.log("Room [" + socket.room + "] destroyed");
+		  
+		  const listOnlineRooms = listRooms.filter(
+            (room) => room.isQuick === false
+          );
+          io.emit("get-current-room-list", listOnlineRooms);
         } else {
           io.to(room.id).emit("disconnectRoom", newRoom);
           listRooms = listRooms.map((room) =>
             room.id === newRoom.id ? { ...newRoom } : room
-          );
+		  );
           console.log(
             "Player [" +
               socket.user.nickname +
@@ -254,7 +263,12 @@ module.exports = (io, socket) => {
           (newRoom.players.X || {}).name === "DISCONNECTED"
         ) {
           listRooms = listRooms.filter((room) => room.id !== socket.room);
-          console.log("Room [" + socket.room + "] destroyed");
+		  console.log("Room [" + socket.room + "] destroyed");
+		  
+		  const listOnlineRooms = listRooms.filter(
+            (room) => room.isQuick === false
+          );
+          io.emit("get-current-room-list", listOnlineRooms);
         } else {
           io.to(room.id).emit("disconnectRoom", newRoom);
           listRooms = listRooms.map((room) =>
@@ -279,88 +293,218 @@ module.exports = (io, socket) => {
     socket.broadcast.emit("update-user-online-list", currentUsers);
   });
 
-  const chooseQuickRoom = (point) => {
-    const listQuickRooms = listRooms.filter(
-      (room) =>
-        room.isQuick === true &&
-        (room.players.O === null || room.players.X === null) //ok ma
+  //   const chooseQuickRoom = (point) => {
+  //     const listQuickRooms = listRooms.filter(
+  //       (room) =>
+  //         room.isQuick === true &&
+  //         (room.players.O === null || room.players.X === null) //ok ma
+  //     );
+
+  //     if (listQuickRooms.length === 0) return false;
+
+  //     // let pickedRoom = {
+  // 	// 	minDifferencePoint = -1,
+  // 	// 	room,
+  // 	// };
+  //     let minDifferencePoint = -1;
+
+  //     listQuickRooms.map((room) => {
+  //       let differencePoint;
+  //       if (room.players.O === null) {
+  //         differencePoint = Math.abs(room.players.X.trophy.point - point);
+  //       } else {
+  //         differencePoint = Math.abs(room.players.O.trophy.point - point);
+  //       }
+  //       if (minDifferencePoint < differencePoint) {
+  //         minDifferencePoint = differencePoint;
+  //         pickedRoom = room;
+  //       }
+  //     });
+  //     return pickedRoom;
+  //   };
+
+  //   socket.on("join-room-quick", () => {
+  //     console.log("join-room-quick");
+
+  // 	let mostResonableRoom = chooseQuickRoom(socket.user.trophy.point);
+
+  // 	setTimeout(()=>{
+
+  // 	}, 3000)
+
+  //     if (mostResonableRoom) {
+  //       if (mostResonableRoom.players.O === null)
+  //         mostResonableRoom.players.O = socket.user;
+  //       else mostResonableRoom.players.X = socket.user;
+  //       socket.room = mostResonableRoom.id;
+  //       socket.roomInfo = mostResonableRoom;
+  //       socket.join(socket.room);
+
+  //       io.to(mostResonableRoom.id).emit(
+  //         "join-room-quick-success",
+  //         mostResonableRoom
+  //       );
+
+  //       console.log("Quick room [" + socket.room + "] played");
+  //       return;
+  //     }
+
+  //     let room = {
+  //       id: Date.now(),
+  //       players: {
+  //         X: socket.user,
+  //         O: null,
+  //       },
+  //       host: socket.user,
+  //       time: 30,
+  //       isQuick: true,
+  //     };
+
+  //     listRooms.push(room);
+
+  //     socket.room = room.id;
+  //     socket.roomInfo = room;
+
+  //     socket.join(socket.room);
+
+  //     console.log("Quick room [" + socket.room + "] created");
+  //   });
+
+  //   socket.on("stop-join-room-quick", () => {
+  //     const listQuickRooms = listRooms.filter((room) => room.isQuick === true);
+
+  //     listQuickRooms.map((room) => {
+  //       if (room.players.X.sub === socket.user.sub && room.players.O === null) {
+  //         listRooms = listRooms.filter((room) => room.id !== socket.room);
+  //         return;
+  //       }
+  //     });
+
+  //     socket.leave(socket.room);
+  //   });
+
+  ////new mech
+
+  const chooseQuickPlayer = (player, isLast) => {
+    if (
+      listQuickPlayers.filter((player) => player.socketId === socket.id)
+        .length === 0
+    ) {
+      return false;
+    }
+
+    const listAnotherQuickPlayer = listQuickPlayers.filter(
+      (player) => player.socketId !== socket.id
     );
 
-    if (listQuickRooms.length === 0) return false;
+    if (listAnotherQuickPlayer.length === 0) return false;
 
-    let pickedRoom;
     let minDifferencePoint = -1;
+    let pickedPlayer;
+    listAnotherQuickPlayer.map((p) => {
+      let differencePoint = Math.abs(p.trophy.point - player.trophy.point);
 
-    listQuickRooms.map((room) => {
-      let differencePoint;
-      if (room.players.O === null) {
-        differencePoint = Math.abs(room.players.X.trophy.point - point);
-      } else {
-        differencePoint = Math.abs(room.players.O.trophy.point - point);
-      }
-      if (minDifferencePoint < differencePoint) {
+      if (minDifferencePoint > differencePoint || minDifferencePoint === -1) {
         minDifferencePoint = differencePoint;
-        pickedRoom = room;
+        pickedPlayer = p;
       }
     });
-    return pickedRoom;
+
+    if (minDifferencePoint <= 100 || isLast) return pickedPlayer;
+    return false;
   };
 
   socket.on("join-room-quick", () => {
-    console.log("join-room-quick");
+    const player = socket.user;
 
-    const mostResonableRoom = chooseQuickRoom(socket.user.trophy.point);
+    console.log("Player [" + player.name + "] want to find another player");
 
-    if (mostResonableRoom) {
-      if (mostResonableRoom.players.O === null)
-        mostResonableRoom.players.O = socket.user;
-      else mostResonableRoom.players.X = socket.user;
-      socket.room = mostResonableRoom.id;
-      socket.roomInfo = mostResonableRoom;
-      socket.join(socket.room);
+    listQuickPlayers.push(player);
 
-      io.to(mostResonableRoom.id).emit(
-        "join-room-quick-success",
-        mostResonableRoom
-      );
+    let mostResonablePlayer = false;
 
-      console.log("Quick room [" + socket.room + "] played");
-      return;
-    }
+    let i = 0;
+    let pointStop = 1;
+    do {
+      setTimeout(() => {
+        let isLast = pointStop === rep;
+        if (
+          listQuickPlayers.filter((player) => player.socketId === socket.id)
+            .length === 0
+        ) {
+          console.log("Da bi kick ra ngoai");
+          return;
+        }
 
-    let room = {
-      id: Date.now(),
-      players: {
-        X: socket.user,
-        O: null,
-      },
-      host: socket.user,
-      time: 30,
-      isQuick: true,
-    };
+        mostResonablePlayer = chooseQuickPlayer(player, isLast);
+        console.log(mostResonablePlayer);
 
-    listRooms.push(room);
+        if (mostResonablePlayer !== false) {
+          console.log("tim duoc nguoi choi: " + mostResonablePlayer.name);
 
+          listQuickPlayers = listQuickPlayers.filter(
+            (player) => player.socketId !== socket.id
+          );
+
+          listQuickPlayers = listQuickPlayers.filter(
+            (player) => player.socketId !== mostResonablePlayer.socketId
+          );
+
+          console.log("List player sau khi paired: \n");
+          console.log(listQuickPlayers);
+
+          let room = {
+            id: Date.now(),
+            players: {
+              X: socket.user,
+              O: mostResonablePlayer,
+            },
+            host: socket.user,
+            time: 30,
+            isQuick: true,
+          };
+
+          listRooms.push(room);
+
+          socket.room = room.id;
+          socket.roomInfo = room;
+
+          socket.join(socket.room);
+
+          io.to(mostResonablePlayer.socketId).emit("pair-success", room);
+
+          console.log("Quick room [" + socket.room + "] created");
+
+          return;
+        }
+        if (isLast) {
+          console.log("fail");
+          socket.emit("join-room-quick-fail");
+          return;
+        }
+        pointStop++;
+      }, (i + 1) * time);
+
+      i++;
+    } while (i < rep);
+  });
+
+  socket.on("stop-join-room-quick", () => {
+    listQuickPlayers = listQuickPlayers.filter(
+      (player) => player.socketId !== socket.id
+    );
+  });
+
+  socket.on("pair-success", (room) => {
     socket.room = room.id;
     socket.roomInfo = room;
 
     socket.join(socket.room);
 
-    console.log("Quick room [" + socket.room + "] created");
+    io.to(room.id).emit("join-room-quick-success", room);
   });
 
-  socket.on("stop-join-room-quick", () => {
-    const listQuickRooms = listRooms.filter((room) => room.isQuick === true);
-
-    listQuickRooms.map((room) => {
-      if (room.players.X.sub === socket.user.sub && room.players.O === null) {
-        listRooms = listRooms.filter((room) => room.id !== socket.room);
-        return;
-      }
-    });
-
-    socket.leave(socket.room);
-  });
+  //new mech end
 
   socket.on("move", (data) => {
     socket.to(socket.room).emit("move", data);

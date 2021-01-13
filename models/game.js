@@ -7,10 +7,12 @@ const gameSchema = new Schema({
   xPlayer: {
     sub: { type: String, required: true },
     displayName: { type: String, required: true },
+    picture: { type: String, required: true}
   },
   oPlayer: {
     sub: { type: String, required: true },
     displayName: { type: String, required: true },
+    picture: { type: String, required: true}
   },
   history: [
     {
