@@ -14,6 +14,12 @@ const roomStatusMapping = {
 module.exports = (io, socket) => {
   socket.on("user-online", (user) => {
     socket.user = { ...user, socketId: socket.id };
+    const currentUsers = Array.from(io.sockets.sockets).map(
+      ([socketId, { user }]) => ({
+        ...user,
+      })
+    );
+    io.emit("update-user-online-list", currentUsers);
   });
 
   socket.on("get-user-online-list", () => {
