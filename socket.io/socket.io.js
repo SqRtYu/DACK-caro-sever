@@ -3,8 +3,8 @@ const User = require("../models/user");
 let listRooms = [];
 let listQuickPlayers = [];
 
-const rep = 3;
-const time = 3000;
+const rep = 6;
+const time = 5000;
 
 const roomStatusMapping = {
   Playing: 0,
@@ -479,6 +479,9 @@ module.exports = (io, socket) => {
           return;
         }
         if (isLast) {
+          listQuickPlayers = listQuickPlayers.filter(
+            (player) => player.socketId !== socket.id
+          );
           console.log("fail");
           socket.emit("join-room-quick-fail");
           return;
